@@ -2,11 +2,12 @@
 <launch>
   <!-- RViz Params-->
   <arg name="robot_description"
-         default="$(command 'xacro $(find-pkg-share motoman_mh50_support)/urdf/mh50.xacro')"
+         default="$(command 'xacro $(find-pkg-share motoman_mh50_support)/urdf/workcell.xacro')"
          description="[String] Path to URDF." />
 
-  <arg name="robot_description_semantic" default="$(find-pkg-share motoman_mh50_support)/config/mh50.srdf" 
-         description="[String] Path to SRDF." />
+  <arg name="robot_description_semantic" 
+         default="$(command 'cat $(find-pkg-share motoman_mh50_support)/config/mh50.srdf')" 
+         description="[String] SRDF content." />
   
   <arg name="task_composer_config_file"
           default="$(find-pkg-share aims_pumpkin)/config/task_composer_plugins.yaml"
@@ -20,6 +21,32 @@
   <node pkg="joint_state_publisher" exec="joint_state_publisher">
     <param name="source_list" value="[sim_joint_states, joint_state_broadcaster/joint_states, ctrl_groups/r1/joint_states]"/>
   </node>
+
+  <!-- Add empty string to empty list so parameter exceptions aren't thrown. See https://github.com/ros2/rclcpp/issues/1955 -->
+  <arg name="scan_disabled_contact_links" default="['']" description="List of links that should be allowed to collide with the scan (e.g., link to which the scan is attached) "/>
+  <arg name="scan_reduced_contact_links" default="['']" description="List of links whose minimum acceptable contact distance to the scan should be set to 0.0 (e.g., the TCP link)"/>
+  <!-- Scan Link -->
+  <arg name="collision_object_type" default="convex_mesh" description="Collision model representation for scan mesh (convex_mesh, mesh, octree)"/>
+  <arg name="octree_resolution" default="0.010"/>
+  <arg name="max_convex_hulls" default="64"/>
+  <!-- Task Composer -->
+  <arg name="task_composer_config_file" default="$(find-pkg-share snp_motion_planning)/config/task_composer_plugins.yaml"/>
+  <arg name="raster_task_name" default="SNPPipeline"/>
+  <arg name="freespace_task_name" default="SNPFreespacePipeline"/>
+  <!-- Profiles -->
+  <arg name="velocity_scaling_factor" default="1.0"/>
+  <arg name="acceleration_scaling_factor" default="1.0"/>
+  <arg name="max_translational_vel" default="0.050"/>
+  <arg name="max_rotational_vel" default="1.571"/>
+  <arg name="max_translational_acc" default="0.100"/>
+  <arg name="max_rotational_acc" default="3.14"/>
+  <arg name="check_joint_accelerations" default="false"/>
+  <arg name="min_contact_distance" default="0.0"/>
+  <arg name="contact_check_lvs_distance" default="0.05"/>
+  <arg name="ompl_max_planning_time" default="5.0"/>
+  <arg name="tcp_max_speed" default="0.25"/>
+  <arg name="cartesian_tolerance" default="[0.01, 0.01, 0.01, 0.05, 0.05, 6.28]"/>
+  <arg name="cartesian_coefficient" default="[2.5, 2.5, 2.5, 2.5, 2.5, 0.0]"/>
 
 
   <node pkg="robot_state_publisher" exec="robot_state_publisher" name="robot_state_publisher" output="screen">
@@ -37,6 +64,30 @@
     <param name="robot_description" value="$(var robot_description)"/>
     <param name="robot_description_semantic" value="$(var robot_description_semantic)"/>
     <param name="task_composer_config_file" value="$(var task_composer_config_file)"/>
+    <param name="scan_disabled_contact_links" value="$(var scan_disabled_contact_links)"/>
+    <param name="scan_reduced_contact_links" value="$(var scan_reduced_contact_links)"/>
+    <!-- Scan Link -->
+    <param name="collision_object_type" value="$(var collision_object_type)"/>
+    <param name="octree_resolution" value="$(var octree_resolution)"/>
+    <param name="max_convex_hulls" value="$(var max_convex_hulls)"/>
+    <!-- Task Composer -->
+    <param name="task_composer_config_file" value="$(var task_composer_config_file)"/>
+    <param name="raster_task_name" value="$(var raster_task_name)"/>
+    <param name="freespace_task_name" value="$(var freespace_task_name)"/>
+    <!-- Profiles -->
+    <param name="velocity_scaling_factor" value="$(var velocity_scaling_factor)"/>
+    <param name="acceleration_scaling_factor" value="$(var acceleration_scaling_factor)"/>
+    <param name="max_translational_vel" value="$(var max_translational_vel)"/>
+    <param name="max_rotational_vel" value="$(var max_rotational_vel)"/>
+    <param name="max_translational_acc" value="$(var max_translational_acc)"/>
+    <param name="max_rotational_acc" value="$(var max_rotational_acc)"/>
+    <param name="check_joint_accelerations" value="$(var check_joint_accelerations)"/>
+    <param name="min_contact_distance" value="$(var min_contact_distance)"/>
+    <param name="contact_check_lvs_distance" value="$(var contact_check_lvs_distance)"/>
+    <param name="ompl_max_planning_time" value="$(var ompl_max_planning_time)"/>
+    <param name="tcp_max_speed" value = "$(var tcp_max_speed)"/>
+    <param name="cartesian_tolerance" value="$(var cartesian_tolerance)"/>
+    <param name="cartesian_coefficient" value="$(var cartesian_coefficient)"/>
   </node>
 
   <node pkg="rviz2" exec="rviz2" name="rviz2" output="screen" args="-d $(var rviz_config_file)">

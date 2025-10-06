@@ -19,7 +19,27 @@ find_package(tesseract_monitoring REQUIRED)
 find_package(tesseract_command_language REQUIRED)
 find_package(tesseract_task_composer REQUIRED)
 find_package(tesseract_rosutils REQUIRED)
+find_package(tesseract_collision REQUIRED)
 find_package(Eigen3 REQUIRED)
+
+# Add library for plugin files
+add_library(${PROJECT_NAME}_plugins
+  src/plugins/kinematic_limits_check_profile.cpp
+)
+
+target_include_directories(${PROJECT_NAME}_plugins PUBLIC
+  ${EIGEN3_INCLUDE_DIRS}
+  include
+  src/plugins
+)
+
+ament_target_dependencies(${PROJECT_NAME}_plugins
+  tesseract_common
+  tesseract_environment
+  tesseract_command_language
+  tesseract_task_composer
+  tesseract_motion_planners
+)
 
 # Add executable
 add_executable(motion_planning_server src/motion_planning_server.cpp)
@@ -28,6 +48,11 @@ add_executable(motion_planning_client src/test_client.cpp)
 
 target_include_directories(motion_planning_server PRIVATE
   ${EIGEN3_INCLUDE_DIRS}
+  include
+)
+
+target_link_libraries(motion_planning_server
+  ${PROJECT_NAME}_plugins
 )
 
 ament_target_dependencies(motion_planning_server
@@ -43,6 +68,7 @@ ament_target_dependencies(motion_planning_server
   tesseract_task_composer
   tesseract_rosutils
   tesseract_monitoring
+  tesseract_collision
 )
 
 ament_target_dependencies(motion_planning_client
@@ -51,10 +77,11 @@ ament_target_dependencies(motion_planning_client
   geometry_msgs
 )
 
-# Install executable
+# Install executable and library
 install(TARGETS
   motion_planning_server
   motion_planning_client
+  ${PROJECT_NAME}_plugins
   DESTINATION lib/${PROJECT_NAME}
 )
 

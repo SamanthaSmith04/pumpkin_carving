@@ -130,8 +130,8 @@ task_composer_plugins:
                   environment: environment
                   profiles: profiles
 
-            ConstantTCPSpeedTimeParameterizationTask:
-              class: ConstantTCPSpeedTimeParameterizationTaskFactory
+            IterativeSplineParameterizationTask:
+              class: IterativeSplineParameterizationTaskFactory
               config:
                 conditional: true
                 inputs:
@@ -147,8 +147,8 @@ task_composer_plugins:
             - source: TrajOptMotionPlannerTask
               destinations: [ErrorTask, DiscreteContactCheckTask]
             - source: DiscreteContactCheckTask
-              destinations: [ErrorTask, ConstantTCPSpeedTimeParameterizationTask]
-            - source: ConstantTCPSpeedTimeParameterizationTask
+              destinations: [ErrorTask, IterativeSplineParameterizationTask]
+            - source: IterativeSplineParameterizationTask
               destinations: [ErrorTask, KinematicLimitsCheckTask]
             - source: KinematicLimitsCheckTask
               destinations: [ErrorTask, DoneTask]

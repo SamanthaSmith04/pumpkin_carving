@@ -2,4 +2,4 @@ repositories:
   tesseract:
     type: git
     url: https://github.com/tesseract-robotics/tesseract_ros2.git
-    version: 0.32.0
+    version: 0.29.1
