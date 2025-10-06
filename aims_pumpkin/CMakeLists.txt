@@ -9,6 +9,58 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(pumpkin_msgs REQUIRED)
+find_package(tesseract_common REQUIRED)
+find_package(tesseract_environment REQUIRED)
+find_package(tesseract_scene_graph REQUIRED)
+find_package(tesseract_state_solver REQUIRED)
+find_package(tesseract_kinematics REQUIRED)
+find_package(tesseract_motion_planners REQUIRED)
+find_package(tesseract_monitoring REQUIRED)
+find_package(tesseract_command_language REQUIRED)
+find_package(tesseract_task_composer REQUIRED)
+find_package(tesseract_rosutils REQUIRED)
+find_package(Eigen3 REQUIRED)
+
+# Add executable
+add_executable(motion_planning_server src/motion_planning_server.cpp)
+
+add_executable(motion_planning_client src/test_client.cpp)
+
+target_include_directories(motion_planning_server PRIVATE
+  ${EIGEN3_INCLUDE_DIRS}
+)
+
+ament_target_dependencies(motion_planning_server
+  rclcpp
+  pumpkin_msgs
+  tesseract_common
+  tesseract_environment
+  tesseract_scene_graph
+  tesseract_state_solver
+  tesseract_kinematics
+  tesseract_motion_planners
+  tesseract_command_language
+  tesseract_task_composer
+  tesseract_rosutils
+  tesseract_monitoring
+)
+
+ament_target_dependencies(motion_planning_client
+  rclcpp
+  pumpkin_msgs
+  geometry_msgs
+)
+
+# Install executable
+install(TARGETS
+  motion_planning_server
+  motion_planning_client
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+
+install(DIRECTORY config launch
+  DESTINATION share/${PROJECT_NAME})
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

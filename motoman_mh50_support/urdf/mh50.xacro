@@ -1,0 +1,8 @@
+<?xml version="1.0" ?>
+
+<robot name="motoman_mh50" xmlns:xacro="http://ros.org/wiki/xacro" xmlns:tesseract="http://ros.org/wiki/tesseract" tesseract:make_convex="true">
+    <xacro:include filename="$(find motoman_mh50_support)/urdf/mh50_macro.xacro" />
+    <xacro:motoman_mh50 prefix=""/>
+</robot>
+
+

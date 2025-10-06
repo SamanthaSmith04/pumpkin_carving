@@ -11,6 +11,17 @@
 
   <depend>rclcpp</depend>
   <depend>pumpkin_msgs</depend>
+  <depend>tesseract_common</depend>
+  <depend>tesseract_environment</depend>
+  <depend>tesseract_scene_graph</depend>
+  <depend>tesseract_state_solver</depend>
+  <depend>tesseract_kinematics</depend>
+  <depend>tesseract_motion_planners</depend>
+  <depend>tesseract_command_language</depend>
+  <depend>tesseract_monitoring</depend>
+  <depend>tesseract_task_composer</depend>
+  <depend>tesseract_rosutils</depend>
+  <depend>eigen3_cmake_module</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

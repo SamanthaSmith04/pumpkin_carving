@@ -1,0 +1,47 @@
+<?xml version="1.0"?>
+<launch>
+  <!-- RViz Params-->
+  <arg name="robot_description"
+         default="$(command 'xacro $(find-pkg-share motoman_mh50_support)/urdf/mh50.xacro')"
+         description="[String] Path to URDF." />
+
+  <arg name="robot_description_semantic" default="$(find-pkg-share motoman_mh50_support)/config/mh50.srdf" 
+         description="[String] Path to SRDF." />
+  
+  <arg name="task_composer_config_file"
+          default="$(find-pkg-share aims_pumpkin)/config/task_composer_plugins.yaml"
+          description="[String] Path to Task Composer config file." />
+  
+  <arg name="root_frame" default="world" description="Root frame of the nominal TF tree, at which to connect the preview TF tree" />
+  
+  <arg name="rviz_config_file" default="$(find-pkg-share aims_pumpkin)/config/rviz_config.rviz" 
+         description="[String] Path to RViz config file." />
+
+  <node pkg="joint_state_publisher" exec="joint_state_publisher">
+    <param name="source_list" value="[sim_joint_states, joint_state_broadcaster/joint_states, ctrl_groups/r1/joint_states]"/>
+  </node>
+
+
+  <node pkg="robot_state_publisher" exec="robot_state_publisher" name="robot_state_publisher" output="screen">
+    <param name="robot_description" value="$(var robot_description)"/>
+  </node>
+
+
+  <!-- <include file="$(find-pkg-share trajectory_preview)/launch/robot_model_preview_pipeline.launch.xml">
+    <arg name="robot_description" value="$(var robot_description)"/>
+    <arg name="root_frame" value="world"/>
+    <arg name="preview_joint_states_topic" value="/trajectory/joint_states"/>
+  </include> -->
+
+  <node pkg="aims_pumpkin" exec="motion_planning_server" name="motion_planning_server" output="screen">
+    <param name="robot_description" value="$(var robot_description)"/>
+    <param name="robot_description_semantic" value="$(var robot_description_semantic)"/>
+    <param name="task_composer_config_file" value="$(var task_composer_config_file)"/>
+  </node>
+
+  <node pkg="rviz2" exec="rviz2" name="rviz2" output="screen" args="-d $(var rviz_config_file)">
+    <param name="robot_description" value="$(var robot_description)"/>
+    <param name="root_frame" value="$(var root_frame)"/>
+  </node>
+
+</launch>
