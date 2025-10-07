@@ -20,17 +20,28 @@ find_package(tesseract_command_language REQUIRED)
 find_package(tesseract_task_composer REQUIRED)
 find_package(tesseract_rosutils REQUIRED)
 find_package(tesseract_collision REQUIRED)
+find_package(tesseract_time_parameterization REQUIRED)
 find_package(Eigen3 REQUIRED)
 
 # Add library for plugin files
 add_library(${PROJECT_NAME}_plugins
   src/plugins/kinematic_limits_check_profile.cpp
+  src/plugins/kinematic_limits_check_task.cpp
 )
 
 target_include_directories(${PROJECT_NAME}_plugins PUBLIC
   ${EIGEN3_INCLUDE_DIRS}
   include
-  src/plugins
+)
+
+target_include_directories(${PROJECT_NAME}_plugins SYSTEM PUBLIC
+  ${tesseract_common_INCLUDE_DIRS}
+  ${tesseract_environment_INCLUDE_DIRS}
+  ${tesseract_command_language_INCLUDE_DIRS}
+  ${tesseract_task_composer_INCLUDE_DIRS}
+  ${tesseract_motion_planners_INCLUDE_DIRS}
+  ${tesseract_kinematics_INCLUDE_DIRS}
+  ${tesseract_time_parameterization_INCLUDE_DIRS}
 )
 
 ament_target_dependencies(${PROJECT_NAME}_plugins
@@ -39,6 +50,8 @@ ament_target_dependencies(${PROJECT_NAME}_plugins
   tesseract_command_language
   tesseract_task_composer
   tesseract_motion_planners
+  tesseract_kinematics
+  tesseract_time_parameterization
 )
 
 # Add executable

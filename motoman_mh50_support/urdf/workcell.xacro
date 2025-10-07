@@ -5,8 +5,7 @@
     <link name="world"/>
 
     <!-- Robot - Yaskawa Motoman MH50 -->
-    <xacro:include filename="$(find motoman_resources)/urdf/common_materials.xacro"/>
-    <xacro:include filename="$(find motoman_mh50_support)/urdf/mh50.xacro"/>
+    <xacro:include filename="mh50.xacro"/>
     <joint name="fix_origin_mh50" type="fixed">
       <origin xyz="0 0 0.127" rpy="0 0 0"/>
       <parent link="world"/>

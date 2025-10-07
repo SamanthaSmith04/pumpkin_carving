@@ -47,12 +47,12 @@
 #include <yaml-cpp/yaml.h>
 
 #include <pumpkin_msgs/srv/plan_motion.hpp>
-#include <aims_pumpkin/kinematic_limits_check_profile.h>
+#include <aims_pumpkin/plugins/kinematic_limits_check_profile.h>
 #include <aims_pumpkin/profiles.h>
 
 // Additional namespace constants for profiles
 static const std::string CONSTANT_TCP_SPEED_TIME_PARAM_TASK_NAME = "ConstantTCPSpeedTimeParameterizationTask";
-static const std::string KINEMATIC_LIMITS_CHECK_TASK_NAME = "KinematicLimitsCheckTask";
+// static const std::string KINEMATIC_LIMITS_CHECK_TASK_NAME = "KinematicLimitsCheckTask";
 static const std::string TCP_SPEED_LIMITER_TASK_NAME = "TCPSpeedLimiterTask";
 static const std::string SCAN_LINK_NAME = "scan_link";
 
@@ -66,8 +66,6 @@ T clamp(const T& value, const T& min_val, const T& max_val) {
 
 // Parameters
 //   General
-static const std::string SCAN_DISABLED_CONTACT_LINKS = "scan_disabled_contact_links";
-static const std::string SCAN_REDUCED_CONTACT_LINKS_PARAM = "scan_reduced_contact_links";
 static const std::string VERBOSE_PARAM = "verbose";
 
 //   Task composer
@@ -319,9 +317,10 @@ class PlanningServer
   
 
     // Kinematic limit check
-    auto check_joint_acc = get<bool>(node_, CHECK_JOINT_ACC_PARAM);
+    auto check_joint_acc = false;  // Override parameter to disable acceleration checking
+    RCLCPP_INFO(node_->get_logger(), "Configuring kinematic limits check profile (acc check: %s)", check_joint_acc ? "true" : "false");
     auto kin_limit_check_profile =
-        std::make_shared<aims_pumpkin::KinematicLimitsCheckProfile>(true, true, check_joint_acc);
+        std::make_shared<KinematicLimitsCheckProfile>(true, true, check_joint_acc);
     profile_dict->addProfile(KINEMATIC_LIMITS_CHECK_TASK_NAME, PROFILE, kin_limit_check_profile);
 
   }

@@ -6,8 +6,6 @@
 
 static const std::string KINEMATIC_LIMITS_CHECK_TASK_NAME = "KinematicLimitsCheckTask";
 
-namespace snp_motion_planning
-{
 struct KinematicLimitsCheckProfile : public tesseract_planning::Profile
 {
   using Ptr = std::shared_ptr<KinematicLimitsCheckProfile>;
@@ -32,6 +30,5 @@ protected:
   void serialize(Archive&, const unsigned int);  // NOLINT
 };
 
-}  // namespace snp_motion_planning
 
-BOOST_CLASS_EXPORT_KEY(snp_motion_planning::KinematicLimitsCheckProfile)
+BOOST_CLASS_EXPORT_KEY(KinematicLimitsCheckProfile)

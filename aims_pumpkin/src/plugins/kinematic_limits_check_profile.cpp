@@ -1,10 +1,8 @@
-#include "kinematic_limits_check_profile.h"
+#include <aims_pumpkin/plugins/kinematic_limits_check_profile.h>
 #include <boost/serialization/base_object.hpp>
 #include <boost/serialization/nvp.hpp>
 #include <typeindex>
 
-namespace snp_motion_planning
-{
 KinematicLimitsCheckProfile::KinematicLimitsCheckProfile(bool check_position_, bool check_velocity_,
                                                          bool check_acceleration_)
   : Profile(KinematicLimitsCheckProfile::getStaticKey())
@@ -27,8 +25,7 @@ void KinematicLimitsCheckProfile::serialize(Archive& ar, const unsigned int /*ve
   ar& BOOST_SERIALIZATION_NVP(check_velocity);
   ar& BOOST_SERIALIZATION_NVP(check_acceleration);
 }
-}  // namespace snp_motion_planning
 
 #include <tesseract_common/serialization.h>
-TESSERACT_SERIALIZE_ARCHIVES_INSTANTIATE(snp_motion_planning::KinematicLimitsCheckProfile)
-BOOST_CLASS_EXPORT_IMPLEMENT(snp_motion_planning::KinematicLimitsCheckProfile)
+TESSERACT_SERIALIZE_ARCHIVES_INSTANTIATE(KinematicLimitsCheckProfile)
+BOOST_CLASS_EXPORT_IMPLEMENT(KinematicLimitsCheckProfile)
