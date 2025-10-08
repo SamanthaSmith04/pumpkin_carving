@@ -8,6 +8,8 @@
 #include <Eigen/Geometry>
 #include <fstream>
 
+#include <tesseract_collision/bullet/bullet_cast_bvh_manager.h>
+#include <tesseract_collision/bullet/bullet_discrete_bvh_manager.h>
 #include <tesseract_collision/bullet/convex_hull_utils.h>
 #include <tesseract_collision/vhacd/convex_decomposition_vhacd.h>
 #include <tesseract_command_language/composite_instruction.h>
@@ -52,7 +54,6 @@
 
 // Additional namespace constants for profiles
 static const std::string CONSTANT_TCP_SPEED_TIME_PARAM_TASK_NAME = "ConstantTCPSpeedTimeParameterizationTask";
-// static const std::string KINEMATIC_LIMITS_CHECK_TASK_NAME = "KinematicLimitsCheckTask";
 static const std::string TCP_SPEED_LIMITER_TASK_NAME = "TCPSpeedLimiterTask";
 static const std::string SCAN_LINK_NAME = "scan_link";
 
@@ -264,7 +265,6 @@ class PlanningServer
 
   void updateProfileDictionary(tesseract_planning::ProfileDictionary::Ptr profile_dict)
   {    
-    // Use default values for parameters since the full parameter system isn't implemented
     double min_contact_dist = 0.01;  // 1cm default
     double longest_valid_segment_length = 0.1;  // 10cm default
     
@@ -310,17 +310,17 @@ class PlanningServer
                               std::make_shared<tesseract_planning::IterativeSplineParameterizationProfile>(
                                   velocity_scaling_factor, acceleration_scaling_factor));
 
-    // Discrete contact check profile
-    profile_dict->addProfile(
-        CONTACT_CHECK_DEFAULT_NAMESPACE, PROFILE,
-        createContactCheckProfile(longest_valid_segment_length, min_contact_dist, collision_pairs));
+    // // Discrete contact check profile
+    // profile_dict->addProfile(
+    //     CONTACT_CHECK_DEFAULT_NAMESPACE, PROFILE,
+    //     createContactCheckProfile(longest_valid_segment_length, min_contact_dist, collision_pairs));
   
 
     // Kinematic limit check
     auto check_joint_acc = false;  // Override parameter to disable acceleration checking
     RCLCPP_INFO(node_->get_logger(), "Configuring kinematic limits check profile (acc check: %s)", check_joint_acc ? "true" : "false");
     auto kin_limit_check_profile =
-        std::make_shared<KinematicLimitsCheckProfile>(true, true, check_joint_acc);
+        std::make_shared<aims_pumpkin::KinematicLimitsCheckProfile>(true, true, check_joint_acc);
     profile_dict->addProfile(KINEMATIC_LIMITS_CHECK_TASK_NAME, PROFILE, kin_limit_check_profile);
 
   }

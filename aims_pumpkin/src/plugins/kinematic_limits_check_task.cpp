@@ -24,6 +24,8 @@ const std::string INPUT_PROGRAM_PORT = "program";
 const std::string INPUT_ENVIRONMENT_PORT = "environment";
 const std::string INPUT_PROFILES_PORT = "profiles";
 
+namespace aims_pumpkin
+{
 class KinematicLimitsCheckTask : public tesseract_planning::TaskComposerTask
 {
 public:
@@ -212,9 +214,13 @@ protected:
   }
 };
 
-#include <tesseract_common/serialization.h>
-TESSERACT_SERIALIZE_ARCHIVES_INSTANTIATE(KinematicLimitsCheckTask)
-BOOST_CLASS_EXPORT_IMPLEMENT(KinematicLimitsCheckTask)
-
 using KinematicLimitsCheckTaskFactory = tesseract_planning::TaskComposerTaskFactory<KinematicLimitsCheckTask>;
-TESSERACT_ADD_PLUGIN(KinematicLimitsCheckTaskFactory, TaskComposerTaskFactory)
+
+}  // namespace aims_pumpkin
+
+#include <tesseract_common/serialization.h>
+TESSERACT_SERIALIZE_ARCHIVES_INSTANTIATE(aims_pumpkin::KinematicLimitsCheckTask)
+BOOST_CLASS_EXPORT_IMPLEMENT(aims_pumpkin::KinematicLimitsCheckTask)
+
+TESSERACT_ADD_TASK_COMPOSER_NODE_PLUGIN(aims_pumpkin::KinematicLimitsCheckTaskFactory,
+                                        KinematicLimitsCheckTaskFactory)

@@ -24,7 +24,7 @@ find_package(tesseract_time_parameterization REQUIRED)
 find_package(Eigen3 REQUIRED)
 
 # Add library for plugin files
-add_library(${PROJECT_NAME}_plugins
+add_library(${PROJECT_NAME}_plugins SHARED
   src/plugins/kinematic_limits_check_profile.cpp
   src/plugins/kinematic_limits_check_task.cpp
 )
@@ -54,14 +54,22 @@ ament_target_dependencies(${PROJECT_NAME}_plugins
   tesseract_time_parameterization
 )
 
+# Configure the plugin library
+target_compile_definitions(${PROJECT_NAME}_plugins PRIVATE TESSERACT_PLUGIN_ANCHOR_IMPL)
+
 # Add executable
 add_executable(motion_planning_server src/motion_planning_server.cpp)
+target_sources(motion_planning_server PRIVATE src/motion_planning_server.cpp
+                src/plugins/kinematic_limits_check_profile.cpp
+                src/plugins/kinematic_limits_check_task.cpp)
 
 add_executable(motion_planning_client src/test_client.cpp)
 
 target_include_directories(motion_planning_server PRIVATE
   ${EIGEN3_INCLUDE_DIRS}
   include
+  include/plugins
+  src/plugins
 )
 
 target_link_libraries(motion_planning_server
@@ -90,12 +98,19 @@ ament_target_dependencies(motion_planning_client
   geometry_msgs
 )
 
-# Install executable and library
+# Install executables
 install(TARGETS
   motion_planning_server
   motion_planning_client
-  ${PROJECT_NAME}_plugins
   DESTINATION lib/${PROJECT_NAME}
+)
+
+# Install the plugin library to the standard lib directory
+install(TARGETS
+  ${PROJECT_NAME}_plugins
+  LIBRARY DESTINATION lib
+  ARCHIVE DESTINATION lib
+  RUNTIME DESTINATION bin
 )
 
 

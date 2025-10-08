@@ -3,6 +3,8 @@
 #include <boost/serialization/nvp.hpp>
 #include <typeindex>
 
+namespace aims_pumpkin
+{
 KinematicLimitsCheckProfile::KinematicLimitsCheckProfile(bool check_position_, bool check_velocity_,
                                                          bool check_acceleration_)
   : Profile(KinematicLimitsCheckProfile::getStaticKey())
@@ -25,7 +27,8 @@ void KinematicLimitsCheckProfile::serialize(Archive& ar, const unsigned int /*ve
   ar& BOOST_SERIALIZATION_NVP(check_velocity);
   ar& BOOST_SERIALIZATION_NVP(check_acceleration);
 }
+}
 
 #include <tesseract_common/serialization.h>
-TESSERACT_SERIALIZE_ARCHIVES_INSTANTIATE(KinematicLimitsCheckProfile)
-BOOST_CLASS_EXPORT_IMPLEMENT(KinematicLimitsCheckProfile)
+TESSERACT_SERIALIZE_ARCHIVES_INSTANTIATE(aims_pumpkin::KinematicLimitsCheckProfile)
+BOOST_CLASS_EXPORT_IMPLEMENT(aims_pumpkin::KinematicLimitsCheckProfile)

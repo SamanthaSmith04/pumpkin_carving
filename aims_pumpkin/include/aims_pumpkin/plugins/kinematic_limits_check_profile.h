@@ -6,6 +6,8 @@
 
 static const std::string KINEMATIC_LIMITS_CHECK_TASK_NAME = "KinematicLimitsCheckTask";
 
+namespace aims_pumpkin
+{
 struct KinematicLimitsCheckProfile : public tesseract_planning::Profile
 {
   using Ptr = std::shared_ptr<KinematicLimitsCheckProfile>;
@@ -29,6 +31,6 @@ protected:
   template <class Archive>
   void serialize(Archive&, const unsigned int);  // NOLINT
 };
+}
 
-
-BOOST_CLASS_EXPORT_KEY(KinematicLimitsCheckProfile)
+BOOST_CLASS_EXPORT_KEY(aims_pumpkin::KinematicLimitsCheckProfile)

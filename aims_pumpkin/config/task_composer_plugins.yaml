@@ -23,6 +23,8 @@ KinematicLimitsCheckTask: &limits_check
 # Task composer configuration
 # --------------------------------------------------------------------------
 task_composer_plugins:
+  search_libraries:
+    - aims_pumpkin_plugins
   executors:
     default: TaskflowExecutor
     plugins:
@@ -45,8 +47,16 @@ task_composer_plugins:
             program: output_program
 
           nodes:
-            DoneTask: *done
-            ErrorTask: *error
+            DoneTask:
+              class: DoneTaskFactory
+              config:
+                conditional: false
+
+            ErrorTask:
+              class: ErrorTaskFactory
+              config:
+                conditional: false
+                trigger_abort: true
 
             OMPLMotionPlannerTask:
               class: OMPLMotionPlannerTaskFactory
@@ -60,15 +70,6 @@ task_composer_plugins:
                   program: ompl_output
                 format_result_as_input: false
 
-            DiscreteContactCheckTask:
-              class: DiscreteContactCheckTaskFactory
-              config:
-                conditional: true
-                inputs:
-                  program: ompl_output
-                  environment: environment
-                  profiles: profiles
-
             IterativeSplineParameterizationTask:
               class: IterativeSplineParameterizationTaskFactory
               config:
@@ -79,6 +80,15 @@ task_composer_plugins:
                   profiles: profiles
                 outputs:
                   program: output_program
+
+            DiscreteContactCheckTask:
+              class: DiscreteContactCheckTaskFactory
+              config:
+                conditional: true
+                inputs:
+                  program: ompl_output
+                  environment: environment
+                  profiles: profiles
 
             KinematicLimitsCheckTask: *limits_check
 
@@ -106,8 +116,16 @@ task_composer_plugins:
             program: output_program
 
           nodes:
-            DoneTask: *done
-            ErrorTask: *error
+            DoneTask:
+              class: DoneTaskFactory
+              config:
+                conditional: false
+
+            ErrorTask:
+              class: ErrorTaskFactory
+              config:
+                conditional: false
+                trigger_abort: true
 
             TrajOptMotionPlannerTask:
               class: TrajOptMotionPlannerTaskFactory
@@ -121,15 +139,6 @@ task_composer_plugins:
                   program: trajopt_output
                 format_result_as_input: false
 
-            DiscreteContactCheckTask:
-              class: DiscreteContactCheckTaskFactory
-              config:
-                conditional: true
-                inputs:
-                  program: trajopt_output
-                  environment: environment
-                  profiles: profiles
-
             IterativeSplineParameterizationTask:
               class: IterativeSplineParameterizationTaskFactory
               config:
@@ -140,6 +149,15 @@ task_composer_plugins:
                   profiles: profiles
                 outputs:
                   program: output_program
+            
+            DiscreteContactCheckTask:
+              class: DiscreteContactCheckTaskFactory
+              config:
+                conditional: true
+                inputs:
+                  program: ompl_output
+                  environment: environment
+                  profiles: profiles
 
             KinematicLimitsCheckTask: *limits_check
 
