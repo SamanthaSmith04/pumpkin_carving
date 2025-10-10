@@ -10,6 +10,19 @@ ErrorTask: &error
     conditional: false
     trigger_abort: true
 
+
+MinLengthTask: &min_length
+  class: MinLengthTaskFactory
+  config:
+    conditional: true
+    inputs:
+      program: input_program
+      environment: environment
+      profiles: profiles
+    outputs:
+      program: min_length_output
+    format_result_as_input: false
+
 KinematicLimitsCheckTask: &limits_check
   class: KinematicLimitsCheckTaskFactory
   config:
@@ -45,63 +58,134 @@ task_composer_plugins:
             program: input_program
           outputs:
             program: output_program
-
           nodes:
-            DoneTask:
-              class: DoneTaskFactory
+            DoneTask: *done
+            ErrorTask: *error
+            MinLengthTask: *min_length
+            TrajOptMotionPlannerTask:
+              class: TrajOptMotionPlannerTaskFactory
               config:
-                conditional: false
-
-            ErrorTask:
-              class: ErrorTaskFactory
+                namespace: TrajOptMotionPlannerTask
+                conditional: true
+                inputs:
+                  program: min_length_output
+                  environment: environment
+                  profiles: profiles
+                outputs:
+                  program: trajopt_output
+                format_result_as_input: false
+            DiscreteContactCheckTrajOptTask:
+              class: DiscreteContactCheckTaskFactory
               config:
-                conditional: false
-                trigger_abort: true
-
+                namespace: DiscreteContactCheckTask
+                conditional: true
+                inputs:
+                  program: trajopt_output
+                  environment: environment
+                  profiles: profiles
+            RemapTrajOptTask:
+              class: RemapTaskFactory
+              config:
+                conditional: true
+                copy: true
+                inputs:
+                  keys: [trajopt_output]
+                outputs:
+                  keys: [output_program]
             OMPLMotionPlannerTask:
               class: OMPLMotionPlannerTaskFactory
               config:
                 conditional: true
                 inputs:
-                  program: input_program
+                  program: trajopt_output
                   environment: environment
                   profiles: profiles
                 outputs:
                   program: ompl_output
+                format_result_as_input: true
+            DiscreteContactCheckOMPLTask:
+              class: DiscreteContactCheckTaskFactory
+              config:
+                namespace: DiscreteContactCheckTask
+                conditional: true
+                inputs:
+                  program: ompl_output
+                  environment: environment
+                  profiles: profiles
+            RemapOMPLTask:
+              class: FormatAsResultTaskFactory
+              config:
+                conditional: true
+                inputs:
+                  programs: [ompl_output]
+                outputs:
+                  programs: [output_program]
+            TrajOptOMPLMotionPlannerTask:
+              class: TrajOptMotionPlannerTaskFactory
+              config:
+                namespace: TrajOptMotionPlannerTask
+                conditional: true
+                inputs:
+                  program: ompl_output
+                  environment: environment
+                  profiles: profiles
+                outputs:
+                  program: trajopt_ompl_output
                 format_result_as_input: false
-
+            DiscreteContactCheckTrajOptOMPLTask:
+              class: DiscreteContactCheckTaskFactory
+              config:
+                namespace: DiscreteContactCheckTask
+                conditional: true
+                inputs:
+                  program: trajopt_ompl_output
+                  environment: environment
+                  profiles: profiles
+            RemapTrajOptOMPLTask:
+              class: RemapTaskFactory
+              config:
+                conditional: true
+                copy: true
+                inputs:
+                  keys: [trajopt_ompl_output]
+                outputs:
+                  keys: [output_program]
             IterativeSplineParameterizationTask:
               class: IterativeSplineParameterizationTaskFactory
               config:
                 conditional: true
                 inputs:
-                  program: ompl_output
+                  program: output_program
                   environment: environment
                   profiles: profiles
                 outputs:
                   program: output_program
-
-            DiscreteContactCheckTask:
-              class: DiscreteContactCheckTaskFactory
-              config:
-                conditional: true
-                inputs:
-                  program: ompl_output
-                  environment: environment
-                  profiles: profiles
-
             KinematicLimitsCheckTask: *limits_check
-
           edges:
+            - source: MinLengthTask
+              destinations: [ErrorTask, TrajOptMotionPlannerTask]
+            - source: TrajOptMotionPlannerTask
+              destinations: [OMPLMotionPlannerTask, DiscreteContactCheckTrajOptTask]
+            - source: DiscreteContactCheckTrajOptTask
+              destinations: [OMPLMotionPlannerTask, RemapTrajOptTask]
+            - source: RemapTrajOptTask
+              destinations: [ErrorTask, IterativeSplineParameterizationTask]
             - source: OMPLMotionPlannerTask
-              destinations: [ErrorTask, DiscreteContactCheckTask]
-            - source: DiscreteContactCheckTask
+              destinations: [ErrorTask, TrajOptOMPLMotionPlannerTask]
+            - source: TrajOptOMPLMotionPlannerTask
+              destinations: [DiscreteContactCheckOMPLTask, DiscreteContactCheckTrajOptOMPLTask]
+            - source: DiscreteContactCheckOMPLTask
+              destinations: [ErrorTask, RemapOMPLTask]
+            - source: RemapOMPLTask
+              destinations: [ErrorTask, IterativeSplineParameterizationTask]
+            - source: DiscreteContactCheckTrajOptOMPLTask
+              destinations: [ErrorTask, RemapTrajOptOMPLTask]
+            - source: RemapTrajOptOMPLTask
               destinations: [ErrorTask, IterativeSplineParameterizationTask]
             - source: IterativeSplineParameterizationTask
               destinations: [ErrorTask, KinematicLimitsCheckTask]
             - source: KinematicLimitsCheckTask
               destinations: [ErrorTask, DoneTask]
-
           terminals: [ErrorTask, DoneTask]
 
       # ===============================================================
@@ -114,21 +198,63 @@ task_composer_plugins:
             program: input_program
           outputs:
             program: output_program
-
           nodes:
-            DoneTask:
-              class: DoneTaskFactory
-              config:
-                conditional: false
-
-            ErrorTask:
-              class: ErrorTaskFactory
-              config:
-                conditional: false
-                trigger_abort: true
-
+            DoneTask: *done
+            ErrorTask: *error
+            MinLengthTask: *min_length
             TrajOptMotionPlannerTask:
               class: TrajOptMotionPlannerTaskFactory
+              config:
+                conditional: true
+                inputs:
+                  program: min_length_output
+                  environment: environment
+                  profiles: profiles
+                outputs:
+                  program: output_program
+                format_result_as_input: false
+            DiscreteContactCheckTask:
+              class: DiscreteContactCheckTaskFactory
+              config:
+                conditional: true
+                inputs:
+                  program: output_program
+                  environment: environment
+                  profiles: profiles
+            KinematicLimitsCheckTask: *limits_check
+          edges:
+            - source: MinLengthTask
+              destinations: [ErrorTask, TrajOptMotionPlannerTask]
+            - source: TrajOptMotionPlannerTask
+              destinations: [ErrorTask, DiscreteContactCheckTask]
+            - source: DiscreteContactCheckTask
+              destinations: [ErrorTask, KinematicLimitsCheckTask]
+            - source: KinematicLimitsCheckTask
+              destinations: [ErrorTask, DoneTask]
+
+          terminals: [ErrorTask, DoneTask]
+
+      PumpkinPipeline:
+        class: GraphTaskFactory
+        config:
+          inputs:
+            program: input_program
+          outputs:
+            program: output_program
+          nodes:
+            DoneTask: *done
+            ErrorTask: *error
+            FormatInputTask:
+              class: FormatPlanningInputTaskFactory
+              config:
+                conditional: false
+                inputs:
+                  program: input_program
+                  environment: environment
+                outputs:
+                  program: input_program
+            SimpleMotionPlannerTask:
+              class: SimpleMotionPlannerTaskFactory
               config:
                 conditional: true
                 inputs:
@@ -136,39 +262,63 @@ task_composer_plugins:
                   environment: environment
                   profiles: profiles
                 outputs:
-                  program: trajopt_output
-                format_result_as_input: false
-
-            IterativeSplineParameterizationTask:
-              class: IterativeSplineParameterizationTaskFactory
+                  program: simple_output
+                format_result_as_input: true
+            DescartesMotionPlannerTask:
+              class: DescartesFMotionPlannerTaskFactory
               config:
                 conditional: true
                 inputs:
-                  program: trajopt_output
+                  program: simple_output
                   environment: environment
                   profiles: profiles
                 outputs:
-                  program: output_program
-            
-            DiscreteContactCheckTask:
-              class: DiscreteContactCheckTaskFactory
+                  program: descartes_output
+                format_result_as_input: true
+            RasterMotionTask:
+              class: RasterMotionTaskFactory
               config:
                 conditional: true
                 inputs:
-                  program: ompl_output
+                  program: descartes_output
                   environment: environment
-                  profiles: profiles
-
-            KinematicLimitsCheckTask: *limits_check
-
+                outputs:
+                  program: output_program
+                freespace:
+                  task: FreespacePipeline
+                  config:
+                    indexing:
+                      - input_program
+                      - min_length_output
+                      - trajopt_output
+                      - ompl_output
+                      - trajopt_ompl_output
+                      - output_program
+                raster:
+                  task: CartesianPipeline
+                  config:
+                    indexing:
+                      - input_program
+                      - min_length_output
+                      - trajopt_output
+                      - output_program
+                transition:
+                  task: FreespacePipeline
+                  config:
+                    indexing:
+                      - input_program
+                      - min_length_output
+                      - trajopt_output
+                      - ompl_output
+                      - trajopt_ompl_output
+                      - output_program
           edges:
-            - source: TrajOptMotionPlannerTask
-              destinations: [ErrorTask, DiscreteContactCheckTask]
-            - source: DiscreteContactCheckTask
-              destinations: [ErrorTask, IterativeSplineParameterizationTask]
-            - source: IterativeSplineParameterizationTask
-              destinations: [ErrorTask, KinematicLimitsCheckTask]
-            - source: KinematicLimitsCheckTask
+            - source: FormatInputTask
+              destinations: [SimpleMotionPlannerTask]
+            - source: SimpleMotionPlannerTask
+              destinations: [ErrorTask, DescartesMotionPlannerTask]
+            - source: DescartesMotionPlannerTask
+              destinations: [ErrorTask, RasterMotionTask]
+            - source: RasterMotionTask
               destinations: [ErrorTask, DoneTask]
-
           terminals: [ErrorTask, DoneTask]

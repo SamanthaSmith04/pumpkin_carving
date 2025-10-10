@@ -21,6 +21,7 @@ find_package(tesseract_task_composer REQUIRED)
 find_package(tesseract_rosutils REQUIRED)
 find_package(tesseract_collision REQUIRED)
 find_package(tesseract_time_parameterization REQUIRED)
+find_package(tf2_eigen REQUIRED)
 find_package(Eigen3 REQUIRED)
 
 # Add library for plugin files
@@ -90,6 +91,7 @@ ament_target_dependencies(motion_planning_server
   tesseract_rosutils
   tesseract_monitoring
   tesseract_collision
+  tf2_eigen
 )
 
 ament_target_dependencies(motion_planning_client

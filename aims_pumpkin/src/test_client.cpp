@@ -13,27 +13,24 @@ int main(int argc, char * argv[])
   pose_array.header.stamp = node->now();
   pose_array.header.frame_id = "world";
 
-  geometry_msgs::msg::Pose pose;
-  pose.position.x = 1.345;
-  pose.position.y = 0.0;
-  pose.position.z = 1.744;
-  pose.orientation.x = 0.0;
-  pose.orientation.y = 0.0;
-  pose.orientation.z = 0.0;
-  pose.orientation.w = 1.0;
+  for (int i = 0; i < 3; ++i) {
+    geometry_msgs::msg::Pose pose;
+    pose.position.x = 1.345;
+    pose.position.y = 0.0 + 0.02 * i;
+    pose.position.z = 1.744 + 0.003 * i;
+    pose.orientation.x = 0.7071068;
+    pose.orientation.y = 0.0;
+    pose.orientation.z = 0.7071068;
+    pose.orientation.w = 0.0;
 
-  pose_array.poses.push_back(pose);
+    pose_array.poses.push_back(pose);
+  }
 
-  geometry_msgs::msg::Pose pose2;
-  pose2.position.x = 1.345;
-  pose2.position.y = 0.02;
-  pose2.position.z = 1.747;
-  pose2.orientation.x = 0.0;
-  pose2.orientation.y = 0.0;
-  pose2.orientation.z = 0.0;
-  pose2.orientation.w = 1.0;
-
-  pose_array.poses.push_back(pose2);
+  // publish the PoseArray for visualization
+  rclcpp::Publisher<geometry_msgs::msg::PoseArray>::SharedPtr pose_pub
+    = node->create_publisher<geometry_msgs::msg::PoseArray>("/test_poses", 10);
+  pose_pub->publish(pose_array);
+  RCLCPP_INFO(node->get_logger(), "Published test PoseArray with %zu poses", pose_array.poses.size());
 
   // Wait for service to be available
   if (!client->wait_for_service(std::chrono::seconds(5))) {

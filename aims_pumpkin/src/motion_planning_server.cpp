@@ -45,6 +45,7 @@
 #include <tesseract_task_composer/core/task_composer_plugin_factory.h>
 #include <tesseract_task_composer/planning/profiles/iterative_spline_parameterization_profile.h>
 #include <tesseract_task_composer/planning/profiles/min_length_profile.h>
+#include <tf2_eigen/tf2_eigen.hpp>
 
 #include <yaml-cpp/yaml.h>
 
@@ -99,7 +100,7 @@ static const std::string FREESPACE_PLANNING_SERVICE = "generate_freespace_motion
 static const std::string MOTION_GROUP = "manipulator";
 static const std::string TCP_FRAME = "tool0";
 
-static const std::string PROFILE = "pumpkin_profile";
+static const std::string PROFILE = "PumpkinPipeline";
 
 
 class PlanningServer
@@ -143,145 +144,158 @@ class PlanningServer
     rclcpp::Service<pumpkin_msgs::srv::PlanMotion>::SharedPtr planning_service_;
     std::string config;
 
+    tesseract_common::Toolpath fromMsg(const std::vector<geometry_msgs::msg::PoseArray>& path)
+    {
+      tesseract_common::Toolpath tps;
+
+      for (const auto& pose_array : path)
+      {
+        tesseract_common::VectorIsometry3d seg;
+        seg.reserve(pose_array.poses.size());
+
+        for (const auto& pose : pose_array.poses)
+        {
+          Eigen::Isometry3d p;
+          tf2::fromMsg(pose, p);
+          seg.push_back(p);
+        }
+
+        tps.push_back(seg);
+      }
+
+      return tps;
+    }
 
     void planMotionCallback(
-      const std::shared_ptr<pumpkin_msgs::srv::PlanMotion::Request> request,
-      std::shared_ptr<pumpkin_msgs::srv::PlanMotion::Response> response)
+        const std::shared_ptr<pumpkin_msgs::srv::PlanMotion::Request> request,
+        std::shared_ptr<pumpkin_msgs::srv::PlanMotion::Response> response)
     {
-      RCLCPP_INFO(node_->get_logger(), "Received motion planning request");
 
-      try {
-        Eigen::VectorXd home_position(6); // Assuming 6-DOF robot
-        home_position << 0.0, 0.0, 0.0, 0.0, 0.0, 0.0;
-        
-        tesseract_common::ManipulatorInfo manip_info;
-        manip_info.manipulator = MOTION_GROUP;
-        manip_info.tcp_frame = TCP_FRAME;
-        manip_info.working_frame = env_->getJointGroup(manip_info.manipulator)->getBaseLinkName();
+// Convert the request path to a Tesseract Toolpath
+            tesseract_common::Toolpath raster_strips = fromMsg(request->path);
+            RCLCPP_INFO(node_->get_logger(), "Received %zu raster strips", raster_strips.size());
 
-        std::cout << "Manipulator: " << manip_info.manipulator << std::endl;
-        std::cout << "TCP frame: " << manip_info.tcp_frame << std::endl;
-        std::cout << "Working frame: " << manip_info.working_frame << std::endl;
-        // Create composite instruction for the complete motion plan
-        tesseract_planning::CompositeInstruction composite_instruction("DEFAULT");
-        
-        // Set manipulator info on the composite instruction
-        composite_instruction.setManipulatorInfo(manip_info);
+            Eigen::VectorXd home_position(6); // Assuming 6-DOF
+            home_position << 0.3, 0.0, 0.0, 0.0, 0.0, 0.0;
 
-        // Freespace move to home position
-        tesseract_planning::MoveInstruction start_instruction(
-          tesseract_planning::StateWaypoint(env_->getJointGroup(MOTION_GROUP)->getJointNames(), home_position),
-          tesseract_planning::MoveInstructionType::FREESPACE
-        );
-        start_instruction.setManipulatorInfo(manip_info);
-        composite_instruction.push_back(start_instruction);
+            tesseract_common::ManipulatorInfo info;
+            info.manipulator = MOTION_GROUP;
+            info.tcp_frame = TCP_FRAME;
+            info.working_frame = env_->getJointGroup(info.manipulator)->getBaseLinkName();
 
-        // Process each PoseArray in the request
-        // if there are multiple PoseArrays, a freespace move will be added between them
-        int current_idx = 0;
-        for (const auto& pose_array : request->path) {
-          for (size_t i = 0; i < pose_array.poses.size(); ++i) {
-            const auto& pose = pose_array.poses[i];
+            std::vector<std::string> joint_names = env_->getJointGroup(info.manipulator)->getJointNames();
+
+            // Profile dictionary
+            auto profile_dict = std::make_shared<tesseract_planning::ProfileDictionary>();
+            updateProfileDictionary(profile_dict);
+
+        RCLCPP_INFO(node_->get_logger(), "Received motion planning request");
+        try {
+
+          std::vector<std::string> joint_names = env_->getJointGroup(info.manipulator)->getJointNames();
+          
+          tesseract_planning::CompositeInstruction program(PROFILE, info);
+          
+          // Define the current state
+          tesseract_planning::StateWaypoint current_state(joint_names, env_->getCurrentJointValues(joint_names));
+          
+          // Add a freespace move from the current state to the first waypoint
+          {
+            tesseract_planning::CompositeInstruction from_start(PROFILE);
+            from_start.setDescription("approach");
             
-            // Convert geometry_msgs::Pose to Eigen::Isometry3d
-            Eigen::Isometry3d target_pose = Eigen::Isometry3d::Identity();
-            target_pose.translation().x() = pose.position.x;
-            target_pose.translation().y() = pose.position.y;
-            target_pose.translation().z() = pose.position.z;
-            
-            Eigen::Quaterniond quat(pose.orientation.w, pose.orientation.x, 
-                                   pose.orientation.y, pose.orientation.z);
-            target_pose.linear() = quat.toRotationMatrix();
+            // Define a move to the start waypoint
+            from_start.push_back(tesseract_planning::MoveInstruction(
+                    current_state, tesseract_planning::MoveInstructionType::FREESPACE, PROFILE, info));
+                    
+                    // Define the target first waypoint
+                    tesseract_planning::CartesianWaypoint wp1 = raster_strips.at(0).at(0);
+                    from_start.push_back(
+                    tesseract_planning::MoveInstruction(wp1, tesseract_planning::MoveInstructionType::FREESPACE, PROFILE, info));
 
-            // Create cartesian move instruction
-            tesseract_planning::MoveInstruction move_instruction(
-              tesseract_planning::CartesianWaypoint(target_pose),
-              tesseract_planning::MoveInstructionType::LINEAR);
-            move_instruction.setManipulatorInfo(manip_info);
-            
-            composite_instruction.push_back(move_instruction);
-          }
-          current_idx++;
-          // Add freespace move between different PoseArrays
-          if (current_idx < request->path.size()) {
+                // Add the composite to the program
+                program.push_back(from_start);
+              }
+              
+              // Process each pose array with freespace motions
+              for (std::size_t rs = 0; rs < raster_strips.size(); ++rs)
+              {
+                tesseract_planning::CompositeInstruction pose_segment(PROFILE);
+                pose_segment.setDescription("Pose Array " + std::to_string(rs));
+                
+                // Add all poses from the array with freespace motions
+                for (std::size_t i = 0; i < raster_strips[rs].size(); ++i)
+                {
+                  tesseract_planning::CartesianWaypoint wp = raster_strips[rs][i];
+                  pose_segment.push_back(
+                      tesseract_planning::MoveInstruction(wp, tesseract_planning::MoveInstructionType::LINEAR, PROFILE, info));
+                }
+                program.push_back(pose_segment);
+                
+                // Add transition to next pose array if not the last one
+                if (rs < raster_strips.size() - 1)
+                {
+                  tesseract_planning::CartesianWaypoint twp = raster_strips[rs + 1].front();
+                  
+                  tesseract_planning::CompositeInstruction transition(PROFILE);
+                  transition.setDescription("Transition #" + std::to_string(rs + 1));
+                  transition.push_back(
+                      tesseract_planning::MoveInstruction(twp, tesseract_planning::MoveInstructionType::FREESPACE, PROFILE, info));
+                  
+                  program.push_back(transition);
+                }
+                  }
+                  
+                  // Add a move back to the current state
+                  {
+                    tesseract_planning::CompositeInstruction to_end(PROFILE);
+                    to_end.setDescription("to_end");
+                    to_end.push_back(tesseract_planning::MoveInstruction(
+                    current_state, tesseract_planning::MoveInstructionType::FREESPACE, PROFILE, info));
+                program.push_back(to_end);
+              }
 
-            auto next_pose_array = request->path[current_idx];
-            if (next_pose_array.poses.empty())
-              continue;
-            
-            Eigen::Isometry3d next_pose = Eigen::Isometry3d::Identity();
-            next_pose.translation().x() = next_pose_array.poses[0].position.x;
-            next_pose.translation().y() = next_pose_array.poses[0].position.y;
-            next_pose.translation().z() = next_pose_array.poses[0].position.z;
-            tesseract_planning::MoveInstruction transit_instruction(
-              tesseract_planning::CartesianWaypoint(next_pose),
-              tesseract_planning::MoveInstructionType::FREESPACE
-            );
-            transit_instruction.setManipulatorInfo(manip_info);
-            composite_instruction.push_back(transit_instruction);
-          }
+              RCLCPP_INFO(node_->get_logger(), "Constructed program with %zu instructions", program.size());
+              // Plan the program
+              auto planned_program = plan(program, profile_dict, PROFILE);
+              // -------------------------------
+              // Convert to joint trajectory
+              // -------------------------------
+              trajectory_msgs::msg::JointTrajectory joint_traj =
+              tesseract_rosutils::toMsg(toJointTrajectory(planned_program), env_->getState());
+              
+              response->success = true;
+              response->message = "Motion plan generated successfully";
+              response->trajectory = joint_traj;
+              RCLCPP_INFO(node_->get_logger(), "Motion plan generated successfully with %zu points", joint_traj.points.size());
         }
-
-        // Freespace move back to home position
-        tesseract_planning::MoveInstruction end_instruction(
-          tesseract_planning::StateWaypoint(env_->getJointGroup(MOTION_GROUP)->getJointNames(), home_position),
-          tesseract_planning::MoveInstructionType::FREESPACE);
-        end_instruction.setManipulatorInfo(manip_info);
-        composite_instruction.push_back(end_instruction);
-
-        tesseract_planning::ProfileDictionary::Ptr profile_dict = std::make_shared<tesseract_planning::ProfileDictionary>();
-
-        updateProfileDictionary(profile_dict);
-
-        std::cout << "Total instructions: " << composite_instruction.size() << std::endl;
-        
-        // Debug: Print each instruction type
-        for (size_t i = 0; i < composite_instruction.size(); ++i) {
-          const auto& instruction = composite_instruction[i];
-          if (instruction.isMoveInstruction()) {
-            const auto& move_inst = instruction.as<tesseract_planning::MoveInstructionPoly>();
-            std::string move_type = (move_inst.getMoveType() == tesseract_planning::MoveInstructionType::LINEAR) ? "LINEAR" : "FREESPACE";
-            std::cout << "Instruction " << i << ": " << move_type << " move" << std::endl;
-          }
+        catch (const std::exception& e)
+        {
+            RCLCPP_ERROR(node_->get_logger(), "Motion planning failed: %s", e.what());
+            response->success = false;
+            response->message = std::string("Motion planning failed: ") + e.what();
         }
-
-        // Setup Task Composer
-        auto program_results = plan(composite_instruction, profile_dict, "FreespacePipeline");
-        
-        // Print the program results for debugging
-        RCLCPP_INFO(node_->get_logger(), "Planned %zu instructions", program_results.size());
-        
-        // Convert the entire program_results to a joint trajectory
-        trajectory_msgs::msg::JointTrajectory joint_traj = tesseract_rosutils::toMsg(toJointTrajectory(program_results), env_->getState());
-        
-        // Set the response
-        response->success = true;
-        response->message = "Motion plan generated successfully";
-        response->trajectory = joint_traj;
-        
-      } catch (const std::exception& e) {
-        RCLCPP_ERROR(node_->get_logger(), "Motion planning failed: %s", e.what());
-        response->success = false;
-        response->message = std::string("Motion planning failed: ") + e.what();
-      }
     }
+
 
   void updateProfileDictionary(tesseract_planning::ProfileDictionary::Ptr profile_dict)
   {    
-    double min_contact_dist = 0.01;  // 1cm default
-    double longest_valid_segment_length = 0.1;  // 10cm default
+    double min_contact_dist = 0.00;
+    double longest_valid_segment_length = 0.05;
     
     // Use default cartesian tolerance vector (6 DOF)
-    Eigen::VectorXd cart_tolerance = Eigen::VectorXd::Constant(6, 0.01);  // 1cm tolerance
-    Eigen::VectorXd cart_coeff = Eigen::VectorXd::Constant(6, 1.0);  // Unit coefficients
+    Eigen::VectorXd cart_tolerance(6);
+    cart_tolerance << 0.01, 0.01, 0.01, 0.05, 0.05, 6.28;
+    Eigen::VectorXd cart_coeff(6);
+    cart_coeff << 2.5, 2.5, 2.5, 2.5, 2.5, 0.0;
     
     // No collision pairs for now
     std::vector<ExplicitCollisionPair> collision_pairs;
     
     // Default velocity and acceleration scaling factors
-    double velocity_scaling_factor = 0.5;
-    double acceleration_scaling_factor = 0.5;
-    
+    double velocity_scaling_factor = 1.0;
+    double acceleration_scaling_factor = 1.0;
+
     // Simple planner
     profile_dict->addProfile(SIMPLE_DEFAULT_NAMESPACE, PROFILE, createSimplePlannerProfile());
 
@@ -314,9 +328,9 @@ class PlanningServer
                                   velocity_scaling_factor, acceleration_scaling_factor));
 
     // // Discrete contact check profile
-    // profile_dict->addProfile(
-    //     CONTACT_CHECK_DEFAULT_NAMESPACE, PROFILE,
-    //     createContactCheckProfile(longest_valid_segment_length, min_contact_dist, collision_pairs));
+    profile_dict->addProfile(
+        CONTACT_CHECK_DEFAULT_NAMESPACE, PROFILE,
+        createContactCheckProfile(longest_valid_segment_length, min_contact_dist, collision_pairs));
   
 
     // Kinematic limit check
