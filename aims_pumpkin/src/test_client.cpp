@@ -51,7 +51,13 @@ int main(int argc, char * argv[])
   if (rclcpp::spin_until_future_complete(node, future) == rclcpp::FutureReturnCode::SUCCESS) {
     auto response = future.get();
     RCLCPP_INFO(node->get_logger(), "Received motion plan response");
-    // Process response as needed
+    // Republish to trajectory preview
+
+    rclcpp::Publisher<trajectory_msgs::msg::JointTrajectory>::SharedPtr traj_pub =
+      node->create_publisher<trajectory_msgs::msg::JointTrajectory>("/trajectory", 10);
+
+    traj_pub->publish(response->trajectory);
+    RCLCPP_INFO(node->get_logger(), "Published trajectory with %zu points", response->trajectory.points.size());
   } else {
     RCLCPP_ERROR(node->get_logger(), "Failed to call service");
   }

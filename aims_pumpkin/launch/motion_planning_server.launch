@@ -53,11 +53,11 @@
   </node>
 
 
-  <!-- <include file="$(find-pkg-share trajectory_preview)/launch/robot_model_preview_pipeline.launch.xml">
+  <include file="$(find-pkg-share trajectory_preview)/launch/robot_model_preview_pipeline.launch.xml">
     <arg name="robot_description" value="$(var robot_description)"/>
     <arg name="root_frame" value="world"/>
     <arg name="preview_joint_states_topic" value="/trajectory/joint_states"/>
-  </include> -->
+  </include>
 
   <node pkg="aims_pumpkin" exec="motion_planning_server" name="motion_planning_server" output="screen">
     <param name="robot_description" value="$(var robot_description)"/>

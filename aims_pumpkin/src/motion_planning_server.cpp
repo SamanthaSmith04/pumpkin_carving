@@ -251,10 +251,13 @@ class PlanningServer
         // Print the program results for debugging
         RCLCPP_INFO(node_->get_logger(), "Planned %zu instructions", program_results.size());
         
-        // set inital state
+        // Convert the entire program_results to a joint trajectory
+        trajectory_msgs::msg::JointTrajectory joint_traj = tesseract_rosutils::toMsg(toJointTrajectory(program_results), env_->getState());
+        
+        // Set the response
         response->success = true;
         response->message = "Motion plan generated successfully";
-        // TODO: Convert CompositeInstruction to JointTrajectory and set response->trajectory
+        response->trajectory = joint_traj;
         
       } catch (const std::exception& e) {
         RCLCPP_ERROR(node_->get_logger(), "Motion planning failed: %s", e.what());
