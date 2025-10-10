@@ -148,12 +148,74 @@ protected:
     tesseract_kinematics::JointGroup::ConstPtr motion_group = env->getJointGroup(manip_info.manipulator);
     const auto limits = motion_group->getLimits();
 
+    // Validate limits matrix dimensions
+    if (limits.joint_limits.rows() != motion_group->numJoints() || limits.joint_limits.cols() != 2)
+    {
+      std::stringstream ss;
+      ss << "Joint limits matrix has incorrect dimensions. Expected " << motion_group->numJoints() 
+         << "x2 but got " << limits.joint_limits.rows() << "x" << limits.joint_limits.cols();
+      info.color = "red";
+      info.status_message = ss.str();
+      return info;
+    }
+    if (limits.velocity_limits.rows() != motion_group->numJoints() || limits.velocity_limits.cols() != 2)
+    {
+      std::stringstream ss;
+      ss << "Velocity limits matrix has incorrect dimensions. Expected " << motion_group->numJoints() 
+         << "x2 but got " << limits.velocity_limits.rows() << "x" << limits.velocity_limits.cols();
+      info.color = "red";
+      info.status_message = ss.str();
+      return info;
+    }
+    if (limits.acceleration_limits.rows() != motion_group->numJoints() || limits.acceleration_limits.cols() != 2)
+    {
+      std::stringstream ss;
+      ss << "Acceleration limits matrix has incorrect dimensions. Expected " << motion_group->numJoints() 
+         << "x2 but got " << limits.acceleration_limits.rows() << "x" << limits.acceleration_limits.cols();
+      info.color = "red";
+      info.status_message = ss.str();
+      return info;
+    }
+
     // Check the trajectory limits
     for (Eigen::Index i = 0; i < trajectory->size(); ++i)
     {
       const Eigen::VectorXd& joint_pos = trajectory->getPosition(i);
       const Eigen::VectorXd& joint_vel = trajectory->getVelocity(i);
       const Eigen::VectorXd& joint_acc = trajectory->getAcceleration(i);
+
+      // Validate dimensions
+      if (joint_pos.size() != motion_group->numJoints())
+      {
+        std::stringstream ss;
+        ss << "Joint position dimension mismatch at waypoint " << i << ". Expected " 
+           << motion_group->numJoints() << " joints but got " << joint_pos.size();
+        info.color = "red";
+        info.status_message = ss.str();
+        return info;
+      }
+
+      // Only check velocity dimensions if velocities are available and checking is enabled
+      if (cur_composite_profile->check_velocity && joint_vel.size() > 0 && joint_vel.size() != motion_group->numJoints())
+      {
+        std::stringstream ss;
+        ss << "Joint velocity dimension mismatch at waypoint " << i << ". Expected " 
+           << motion_group->numJoints() << " joints but got " << joint_vel.size();
+        info.color = "red";
+        info.status_message = ss.str();
+        return info;
+      }
+
+      // Only check acceleration dimensions if accelerations are available and checking is enabled
+      if (cur_composite_profile->check_acceleration && joint_acc.size() > 0 && joint_acc.size() != motion_group->numJoints())
+      {
+        std::stringstream ss;
+        ss << "Joint acceleration dimension mismatch at waypoint " << i << ". Expected " 
+           << motion_group->numJoints() << " joints but got " << joint_acc.size();
+        info.color = "red";
+        info.status_message = ss.str();
+        return info;
+      }
 
       if (cur_composite_profile->check_position)
       {
@@ -167,7 +229,7 @@ protected:
         }
       }
 
-      if (cur_composite_profile->check_velocity)
+      if (cur_composite_profile->check_velocity && joint_vel.size() > 0)
       {
         // Check for joint velocity limit violations
         if (!tesseract_common::satisfiesLimits<double>(joint_vel, limits.velocity_limits))
@@ -183,9 +245,9 @@ protected:
         }
       }
 
-      if (cur_composite_profile->check_acceleration)
+      if (cur_composite_profile->check_acceleration && joint_acc.size() > 0)
       {
-        // Check for joint velocity acceleration limit violations
+        // Check for joint acceleration limit violations
         if (!tesseract_common::satisfiesLimits<double>(joint_acc, limits.acceleration_limits))
         {
           Eigen::ArrayXd capacity = 100.0 * joint_acc.array().abs() / limits.acceleration_limits.col(1).array();

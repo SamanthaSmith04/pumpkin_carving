@@ -13,7 +13,7 @@ int main(int argc, char * argv[])
   pose_array.header.stamp = node->now();
   pose_array.header.frame_id = "world";
 
-  for (int i = 0; i < 3; ++i) {
+  for (int i = 0; i < 30; ++i) {
     geometry_msgs::msg::Pose pose;
     pose.position.x = 1.345;
     pose.position.y = 0.0 + 0.02 * i;

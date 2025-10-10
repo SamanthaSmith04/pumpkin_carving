@@ -334,10 +334,15 @@ class PlanningServer
   
 
     // Kinematic limit check
-    auto check_joint_acc = false;  // Override parameter to disable acceleration checking
-    RCLCPP_INFO(node_->get_logger(), "Configuring kinematic limits check profile (acc check: %s)", check_joint_acc ? "true" : "false");
+    bool check_position = true;     // Always check position limits
+    bool check_velocity = false;    // Only check velocity if time parameterization is enabled
+    bool check_acceleration = false; // Only check acceleration if time parameterization is enabled
+    RCLCPP_INFO(node_->get_logger(), "Configuring kinematic limits check profile (pos: %s, vel: %s, acc: %s)",
+                check_position ? "true" : "false",
+                check_velocity ? "true" : "false",
+                check_acceleration ? "true" : "false");
     auto kin_limit_check_profile =
-        std::make_shared<aims_pumpkin::KinematicLimitsCheckProfile>(true, true, check_joint_acc);
+        std::make_shared<aims_pumpkin::KinematicLimitsCheckProfile>(check_position, check_velocity, check_acceleration);
     profile_dict->addProfile(KINEMATIC_LIMITS_CHECK_TASK_NAME, PROFILE, kin_limit_check_profile);
 
   }
