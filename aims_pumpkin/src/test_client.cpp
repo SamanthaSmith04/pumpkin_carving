@@ -13,9 +13,9 @@ int main(int argc, char * argv[])
   pose_array.header.stamp = node->now();
   pose_array.header.frame_id = "world";
 
-  for (int i = 0; i < 30; ++i) {
+  for (int i = 0; i < 20; ++i) {
     geometry_msgs::msg::Pose pose;
-    pose.position.x = 1.345;
+    pose.position.x = 1.345 + 0.02 * i;
     pose.position.y = 0.0 + 0.02 * i;
     pose.position.z = 1.744 + 0.003 * i;
     pose.orientation.x = 0.7071068;
@@ -26,11 +26,31 @@ int main(int argc, char * argv[])
     pose_array.poses.push_back(pose);
   }
 
+
+  geometry_msgs::msg::PoseArray pose_array2;
+  pose_array2.header.stamp = node->now();
+  pose_array2.header.frame_id = "world";
+
+  for (int i = 0; i < 30; ++i) {
+    geometry_msgs::msg::Pose pose;
+    pose.position.x = 1.4 - 0.02 * i;
+    pose.position.y = 0.0 + 0.02 * i;
+    pose.position.z = 1.6 + 0.003 * i;
+    pose.orientation.x = 0.7071068;
+    pose.orientation.y = 0.0;
+    pose.orientation.z = 0.7071068;
+    pose.orientation.w = 0.0;
+
+    pose_array2.poses.push_back(pose);
+  }
+
   // publish the PoseArray for visualization
   rclcpp::Publisher<geometry_msgs::msg::PoseArray>::SharedPtr pose_pub
     = node->create_publisher<geometry_msgs::msg::PoseArray>("/test_poses", 10);
-  pose_pub->publish(pose_array);
-  RCLCPP_INFO(node->get_logger(), "Published test PoseArray with %zu poses", pose_array.poses.size());
+  auto pose_to_pub = pose_array;
+  pose_to_pub.poses.insert(pose_to_pub.poses.end(), pose_array2.poses.begin(), pose_array2.poses.end());
+  pose_pub->publish(pose_to_pub);
+  RCLCPP_INFO(node->get_logger(), "Published test PoseArray with %zu poses", pose_to_pub.poses.size());
 
   // Wait for service to be available
   if (!client->wait_for_service(std::chrono::seconds(5))) {
@@ -40,7 +60,9 @@ int main(int argc, char * argv[])
   }
 
   auto request = std::make_shared<pumpkin_msgs::srv::PlanMotion::Request>();
+  // pose_array.poses.insert(pose_array.poses.end(), pose_array2.poses.begin(), pose_array2.poses.end());
   request->path.push_back(pose_array);
+  request->path.push_back(pose_array2);
 
   auto future = client->async_send_request(request);
 
@@ -55,6 +77,7 @@ int main(int argc, char * argv[])
 
     traj_pub->publish(response->trajectory);
     RCLCPP_INFO(node->get_logger(), "Published trajectory with %zu points", response->trajectory.points.size());
+
   } else {
     RCLCPP_ERROR(node->get_logger(), "Failed to call service");
   }

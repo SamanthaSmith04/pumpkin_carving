@@ -200,18 +200,18 @@ class PlanningServer
           tesseract_planning::StateWaypoint current_state(joint_names, env_->getCurrentJointValues(joint_names));
           
           // Add a freespace move from the current state to the first waypoint
-          {
-            tesseract_planning::CompositeInstruction from_start(PROFILE);
-            from_start.setDescription("approach");
-            
-            // Define a move to the start waypoint
-            from_start.push_back(tesseract_planning::MoveInstruction(
-                    current_state, tesseract_planning::MoveInstructionType::FREESPACE, PROFILE, info));
-                    
-                    // Define the target first waypoint
-                    tesseract_planning::CartesianWaypoint wp1 = raster_strips.at(0).at(0);
-                    from_start.push_back(
-                    tesseract_planning::MoveInstruction(wp1, tesseract_planning::MoveInstructionType::FREESPACE, PROFILE, info));
+            {
+                tesseract_planning::CompositeInstruction from_start(PROFILE);
+                from_start.setDescription("approach");
+
+                from_start.push_back(tesseract_planning::MoveInstruction(
+                        current_state, tesseract_planning::MoveInstructionType::FREESPACE, PROFILE, info));
+                        
+                // Define the target first waypoint
+                tesseract_planning::CartesianWaypoint wp1 = raster_strips.at(0).at(0);
+
+                from_start.push_back(
+                tesseract_planning::MoveInstruction(wp1, tesseract_planning::MoveInstructionType::FREESPACE, PROFILE, info));
 
                 // Add the composite to the program
                 program.push_back(from_start);
@@ -220,41 +220,49 @@ class PlanningServer
               // Process each pose array with freespace motions
               for (std::size_t rs = 0; rs < raster_strips.size(); ++rs)
               {
-                tesseract_planning::CompositeInstruction pose_segment(PROFILE);
-                pose_segment.setDescription("Pose Array " + std::to_string(rs));
-                
-                // Add all poses from the array with freespace motions
-                for (std::size_t i = 0; i < raster_strips[rs].size(); ++i)
-                {
-                  tesseract_planning::CartesianWaypoint wp = raster_strips[rs][i];
-                  pose_segment.push_back(
-                      tesseract_planning::MoveInstruction(wp, tesseract_planning::MoveInstructionType::LINEAR, PROFILE, info));
-                }
-                program.push_back(pose_segment);
-                
-                // Add transition to next pose array if not the last one
-                if (rs < raster_strips.size() - 1)
-                {
-                  tesseract_planning::CartesianWaypoint twp = raster_strips[rs + 1].front();
-                  
-                  tesseract_planning::CompositeInstruction transition(PROFILE);
-                  transition.setDescription("Transition #" + std::to_string(rs + 1));
-                  transition.push_back(
-                      tesseract_planning::MoveInstruction(twp, tesseract_planning::MoveInstructionType::FREESPACE, PROFILE, info));
-                  
-                  program.push_back(transition);
-                }
-                  }
-                  
-                  // Add a move back to the current state
-                  {
-                    tesseract_planning::CompositeInstruction to_end(PROFILE);
-                    to_end.setDescription("to_end");
-                    to_end.push_back(tesseract_planning::MoveInstruction(
-                    current_state, tesseract_planning::MoveInstructionType::FREESPACE, PROFILE, info));
-                program.push_back(to_end);
-              }
+                  tesseract_planning::CompositeInstruction pose_segment(PROFILE);
+                  pose_segment.setDescription("Raster # " + std::to_string(rs));
 
+                  // Repeat the first waypoint as a dummy
+                  tesseract_planning::CartesianWaypoint first_wp = raster_strips[rs][0];
+                  pose_segment.push_back(
+                      tesseract_planning::MoveInstruction(first_wp, tesseract_planning::MoveInstructionType::LINEAR, PROFILE, info));
+
+                  // Add all real waypoints
+                  for (std::size_t i = 0; i < raster_strips[rs].size(); ++i)
+                  {
+                      tesseract_planning::CartesianWaypoint wp = raster_strips[rs][i];
+                      pose_segment.push_back(
+                          tesseract_planning::MoveInstruction(wp, tesseract_planning::MoveInstructionType::LINEAR, PROFILE, info));
+                  }
+
+                  program.push_back(pose_segment);
+                  RCLCPP_INFO(node_->get_logger(), "Added pose array %zu with %zu waypoints", rs, raster_strips[rs].size());
+
+                  // Add transition to next segment if not last
+                  if (rs < raster_strips.size() - 1)
+                  {
+                      tesseract_planning::CartesianWaypoint twp = raster_strips[rs + 1].front();
+                      tesseract_planning::CompositeInstruction transition(PROFILE);
+                      transition.setDescription("Transition #" + std::to_string(rs + 1));
+                      transition.push_back(
+                          tesseract_planning::MoveInstruction(twp, tesseract_planning::MoveInstructionType::FREESPACE, PROFILE, info));
+                      program.push_back(transition);
+                      RCLCPP_INFO(node_->get_logger(), "Added transition to next pose array");
+                  }
+              }
+                  
+                  // Add a move to home position
+                  {
+                    tesseract_planning::CompositeInstruction to_home(PROFILE);
+                    to_home.setDescription("to_home");
+
+                    tesseract_planning::StateWaypoint home_wp(joint_names, home_position);
+                    to_home.push_back(tesseract_planning::MoveInstruction(
+                    home_wp, tesseract_planning::MoveInstructionType::FREESPACE, PROFILE, info));
+                program.push_back(to_home);
+              }
+                  
               RCLCPP_INFO(node_->get_logger(), "Constructed program with %zu instructions", program.size());
               // Plan the program
               auto planned_program = plan(program, profile_dict, PROFILE);
@@ -281,13 +289,13 @@ class PlanningServer
   void updateProfileDictionary(tesseract_planning::ProfileDictionary::Ptr profile_dict)
   {    
     double min_contact_dist = 0.00;
-    double longest_valid_segment_length = 0.05;
+    double longest_valid_segment_length = 0.01;
     
-    // Use default cartesian tolerance vector (6 DOF)
+    // Use tighter cartesian tolerance vector (6 DOF)
     Eigen::VectorXd cart_tolerance(6);
-    cart_tolerance << 0.01, 0.01, 0.01, 0.05, 0.05, 6.28;
+    cart_tolerance << 0.000, 0.000, 0.000, 0.050, 0.050, 6.280; 
     Eigen::VectorXd cart_coeff(6);
-    cart_coeff << 2.5, 2.5, 2.5, 2.5, 2.5, 0.0;
+    cart_coeff << 10.0, 10.0, 10.0, 2.5, 2.5, 0.0; 
     
     // No collision pairs for now
     std::vector<ExplicitCollisionPair> collision_pairs;

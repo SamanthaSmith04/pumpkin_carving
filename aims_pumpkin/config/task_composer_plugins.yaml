@@ -211,16 +211,26 @@ task_composer_plugins:
                   environment: environment
                   profiles: profiles
                 outputs:
-                  program: output_program
+                  program: trajopt_output
                 format_result_as_input: false
             DiscreteContactCheckTask:
               class: DiscreteContactCheckTaskFactory
               config:
                 conditional: true
                 inputs:
-                  program: output_program
+                  program: trajopt_output
                   environment: environment
                   profiles: profiles
+            RemapTrajOptTask:
+              class: RemapTaskFactory
+              config:
+                conditional: true
+                copy: true
+                inputs:
+                  keys: [trajopt_output]
+                outputs:
+                  keys: [output_program]
+
             KinematicLimitsCheckTask: *limits_check
           edges:
             - source: MinLengthTask
@@ -228,6 +238,8 @@ task_composer_plugins:
             - source: TrajOptMotionPlannerTask
               destinations: [ErrorTask, DiscreteContactCheckTask]
             - source: DiscreteContactCheckTask
+              destinations: [ErrorTask, RemapTrajOptTask]
+            - source: RemapTrajOptTask
               destinations: [ErrorTask, KinematicLimitsCheckTask]
             - source: KinematicLimitsCheckTask
               destinations: [ErrorTask, DoneTask]

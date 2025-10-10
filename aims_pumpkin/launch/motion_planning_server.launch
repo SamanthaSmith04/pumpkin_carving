@@ -71,6 +71,7 @@
     <param name="task_composer_config_file" value="$(var task_composer_config_file)"/>
     <param name="raster_task_name" value="$(var raster_task_name)"/>
     <param name="freespace_task_name" value="$(var freespace_task_name)"/>
+
     <!-- Profiles -->
     <param name="velocity_scaling_factor" value="$(var velocity_scaling_factor)"/>
     <param name="acceleration_scaling_factor" value="$(var acceleration_scaling_factor)"/>
@@ -87,6 +88,11 @@
     <param name="cartesian_coefficient" value="$(var cartesian_coefficient)"/>
   </node>
 
+  <node pkg="joint_state_publisher_gui" exec="joint_state_publisher_gui" name="joint_state_publisher_gui" output="screen">
+    <param name="robot_description" value="$(var robot_description)"/>
+    <remap from="joint_states" to="sim_joint_states"/>
+  </node>
+  
   <node pkg="rviz2" exec="rviz2" name="rviz2" output="screen" args="-d $(var rviz_config_file)">
     <param name="robot_description" value="$(var robot_description)"/>
     <param name="root_frame" value="$(var root_frame)"/>
