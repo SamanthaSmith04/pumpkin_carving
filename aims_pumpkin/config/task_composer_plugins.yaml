@@ -202,7 +202,7 @@ task_composer_plugins:
             DoneTask: *done
             ErrorTask: *error
             MinLengthTask: *min_length
-            TrajOptMotionPlannerTask:
+            TrajOptMotionPlannerTaskCartesian:
               class: TrajOptMotionPlannerTaskFactory
               config:
                 conditional: true
@@ -221,29 +221,28 @@ task_composer_plugins:
                   program: trajopt_output
                   environment: environment
                   profiles: profiles
-            RemapTrajOptTask:
-              class: RemapTaskFactory
+            ConstantTCPSpeedTimeParameterizationTask:
+              class: ConstantTCPSpeedTimeParameterizationTaskFactory
               config:
                 conditional: true
-                copy: true
                 inputs:
-                  keys: [trajopt_output]
+                  program: trajopt_output
+                  environment: environment
+                  profiles: profiles
                 outputs:
-                  keys: [output_program]
-
+                  program: output_program
             KinematicLimitsCheckTask: *limits_check
           edges:
             - source: MinLengthTask
-              destinations: [ErrorTask, TrajOptMotionPlannerTask]
-            - source: TrajOptMotionPlannerTask
+              destinations: [ErrorTask, TrajOptMotionPlannerTaskCartesian]
+            - source: TrajOptMotionPlannerTaskCartesian
               destinations: [ErrorTask, DiscreteContactCheckTask]
             - source: DiscreteContactCheckTask
-              destinations: [ErrorTask, RemapTrajOptTask]
-            - source: RemapTrajOptTask
+              destinations: [ErrorTask, ConstantTCPSpeedTimeParameterizationTask]
+            - source: ConstantTCPSpeedTimeParameterizationTask
               destinations: [ErrorTask, KinematicLimitsCheckTask]
             - source: KinematicLimitsCheckTask
               destinations: [ErrorTask, DoneTask]
-
           terminals: [ErrorTask, DoneTask]
 
       PumpkinPipeline:
@@ -276,7 +275,7 @@ task_composer_plugins:
                 outputs:
                   program: simple_output
                 format_result_as_input: true
-            DescartesMotionPlannerTask:
+            DescartesMotionPlannerTaskPre:
               class: DescartesFMotionPlannerTaskFactory
               config:
                 conditional: true
@@ -328,8 +327,8 @@ task_composer_plugins:
             - source: FormatInputTask
               destinations: [SimpleMotionPlannerTask]
             - source: SimpleMotionPlannerTask
-              destinations: [ErrorTask, DescartesMotionPlannerTask]
-            - source: DescartesMotionPlannerTask
+              destinations: [ErrorTask, DescartesMotionPlannerTaskPre]
+            - source: DescartesMotionPlannerTaskPre
               destinations: [ErrorTask, RasterMotionTask]
             - source: RasterMotionTask
               destinations: [ErrorTask, DoneTask]

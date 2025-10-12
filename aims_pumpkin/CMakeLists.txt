@@ -28,6 +28,8 @@ find_package(Eigen3 REQUIRED)
 add_library(${PROJECT_NAME}_plugins SHARED
   src/plugins/kinematic_limits_check_profile.cpp
   src/plugins/kinematic_limits_check_task.cpp
+  src/plugins/constant_tcp_speed_time_parameterization_task.cpp
+  src/plugins/constant_tcp_speed_time_parameterization_profile.cpp
 )
 
 target_include_directories(${PROJECT_NAME}_plugins PUBLIC
@@ -62,7 +64,9 @@ target_compile_definitions(${PROJECT_NAME}_plugins PRIVATE TESSERACT_PLUGIN_ANCH
 add_executable(motion_planning_server src/motion_planning_server.cpp)
 target_sources(motion_planning_server PRIVATE src/motion_planning_server.cpp
                 src/plugins/kinematic_limits_check_profile.cpp
-                src/plugins/kinematic_limits_check_task.cpp)
+                src/plugins/kinematic_limits_check_task.cpp
+                src/plugins/constant_tcp_speed_time_parameterization_task.cpp
+                src/plugins/constant_tcp_speed_time_parameterization_profile.cpp)
 
 add_executable(motion_planning_client src/test_client.cpp)
 

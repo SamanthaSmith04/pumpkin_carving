@@ -51,10 +51,10 @@
 
 #include <pumpkin_msgs/srv/plan_motion.hpp>
 #include <aims_pumpkin/plugins/kinematic_limits_check_profile.h>
+#include <aims_pumpkin/plugins/constant_tcp_speed_time_parameterization_profile.h>
 #include <aims_pumpkin/profiles.h>
 
 // Additional namespace constants for profiles
-static const std::string CONSTANT_TCP_SPEED_TIME_PARAM_TASK_NAME = "ConstantTCPSpeedTimeParameterizationTask";
 static const std::string TCP_SPEED_LIMITER_TASK_NAME = "TCPSpeedLimiterTask";
 static const std::string SCAN_LINK_NAME = "scan_link";
 
@@ -195,75 +195,81 @@ class PlanningServer
           std::vector<std::string> joint_names = env_->getJointGroup(info.manipulator)->getJointNames();
           
           tesseract_planning::CompositeInstruction program(PROFILE, info);
+          program.setDescription("input_program");
           
           // Define the current state
           tesseract_planning::StateWaypoint current_state(joint_names, env_->getCurrentJointValues(joint_names));
           
           // Add a freespace move from the current state to the first waypoint
-            {
+              // From start - must be first
+              {
                 tesseract_planning::CompositeInstruction from_start(PROFILE);
                 from_start.setDescription("approach");
 
+                // Define a move to the start waypoint
                 from_start.push_back(tesseract_planning::MoveInstruction(
-                        current_state, tesseract_planning::MoveInstructionType::FREESPACE, PROFILE, info));
-                        
+                    current_state, tesseract_planning::MoveInstructionType::FREESPACE, PROFILE, info));
+
                 // Define the target first waypoint
                 tesseract_planning::CartesianWaypoint wp1 = raster_strips.at(0).at(0);
-
                 from_start.push_back(
-                tesseract_planning::MoveInstruction(wp1, tesseract_planning::MoveInstructionType::FREESPACE, PROFILE, info));
+                    tesseract_planning::MoveInstruction(wp1, tesseract_planning::MoveInstructionType::FREESPACE, PROFILE, info));
 
                 // Add the composite to the program
                 program.push_back(from_start);
               }
-              
-              // Process each pose array with freespace motions
+                            
+              // Process raster segments and transitions
               for (std::size_t rs = 0; rs < raster_strips.size(); ++rs)
               {
-                  tesseract_planning::CompositeInstruction pose_segment(PROFILE);
-                  pose_segment.setDescription("Raster # " + std::to_string(rs));
-
-                  // Repeat the first waypoint as a dummy
-                  tesseract_planning::CartesianWaypoint first_wp = raster_strips[rs][0];
-                  pose_segment.push_back(
-                      tesseract_planning::MoveInstruction(first_wp, tesseract_planning::MoveInstructionType::LINEAR, PROFILE, info));
-
-                  // Add all real waypoints
-                  for (std::size_t i = 0; i < raster_strips[rs].size(); ++i)
+                  // // Add raster segment
+                  tesseract_planning::CompositeInstruction raster_segment(PROFILE);
+                  raster_segment.setDescription("Raster Index " + std::to_string(rs));                  
+                  // Add all waypoints with LINEAR motion type
+                  for (int i = 1; i < raster_strips[rs].size(); ++i)
                   {
-                      tesseract_planning::CartesianWaypoint wp = raster_strips[rs][i];
-                      pose_segment.push_back(
-                          tesseract_planning::MoveInstruction(wp, tesseract_planning::MoveInstructionType::LINEAR, PROFILE, info));
+                      tesseract_planning::CartesianWaypoint cart_wp = raster_strips[rs][i];
+                      cart_wp.print("Waypoint " + std::to_string(i) + ": ");
+
+                      raster_segment.push_back(
+                          tesseract_planning::MoveInstruction(cart_wp, tesseract_planning::MoveInstructionType::LINEAR, PROFILE, info));
                   }
+                  program.push_back(raster_segment);
 
-                  program.push_back(pose_segment);
-                  RCLCPP_INFO(node_->get_logger(), "Added pose array %zu with %zu waypoints", rs, raster_strips[rs].size());
-
-                  // Add transition to next segment if not last
+                  // Add transition if not last segment
                   if (rs < raster_strips.size() - 1)
                   {
                       tesseract_planning::CartesianWaypoint twp = raster_strips[rs + 1].front();
+
+                      tesseract_planning::MoveInstruction transition_instruction1(
+                          twp, tesseract_planning::MoveInstructionType::FREESPACE, PROFILE, info);
+                      transition_instruction1.setDescription("Transition #" + std::to_string(rs + 1));
+
                       tesseract_planning::CompositeInstruction transition(PROFILE);
                       transition.setDescription("Transition #" + std::to_string(rs + 1));
-                      transition.push_back(
-                          tesseract_planning::MoveInstruction(twp, tesseract_planning::MoveInstructionType::FREESPACE, PROFILE, info));
+                      transition.push_back(transition_instruction1);
                       program.push_back(transition);
-                      RCLCPP_INFO(node_->get_logger(), "Added transition to next pose array");
                   }
               }
                   
                   // Add a move to home position
-                  {
-                    tesseract_planning::CompositeInstruction to_home(PROFILE);
-                    to_home.setDescription("to_home");
-
+                {
+                    
                     tesseract_planning::StateWaypoint home_wp(joint_names, home_position);
-                    to_home.push_back(tesseract_planning::MoveInstruction(
-                    home_wp, tesseract_planning::MoveInstructionType::FREESPACE, PROFILE, info));
-                program.push_back(to_home);
-              }
+                    tesseract_planning::CompositeInstruction to_end(PROFILE);
+                    to_end.setDescription("to_end");
+                    to_end.push_back(tesseract_planning::MoveInstruction(
+                        home_wp, tesseract_planning::MoveInstructionType::FREESPACE, PROFILE, info));
+                    program.push_back(to_end);
+                }
                   
               RCLCPP_INFO(node_->get_logger(), "Constructed program with %zu instructions", program.size());
+              for (std::size_t i = 0; i < program.size(); ++i)
+              {
+                const auto& seg = program.at(i);
+                std::cout << "Segment " << i << ": description = " << seg.getDescription() << std::endl;
+              }
+
               // Plan the program
               auto planned_program = plan(program, profile_dict, PROFILE);
               // -------------------------------
@@ -335,6 +341,15 @@ class PlanningServer
                               std::make_shared<tesseract_planning::IterativeSplineParameterizationProfile>(
                                   velocity_scaling_factor, acceleration_scaling_factor));
 
+      // Constant TCP time parameterization profile
+      double vel_trans = 0.050;
+      double vel_rot = 1.571;
+      double acc_trans = 0.100;
+      double acc_rot = 3.14;
+      auto cart_time_param_profile = std::make_shared<snp_motion_planning::ConstantTCPSpeedTimeParameterizationProfile>(
+          vel_trans, vel_rot, acc_trans, acc_rot, velocity_scaling_factor, acceleration_scaling_factor);
+      profile_dict->addProfile(CONSTANT_TCP_SPEED_TIME_PARAM_TASK_NAME, PROFILE, cart_time_param_profile);
+
     // // Discrete contact check profile
     profile_dict->addProfile(
         CONTACT_CHECK_DEFAULT_NAMESPACE, PROFILE,
@@ -386,6 +401,10 @@ class PlanningServer
     tesseract_planning::TaskComposerFuture::UPtr result = executor->run(*task, task_data, true);
     result->wait();
     log.context = result->context;
+
+    // Save task composer log
+    const std::string log_filepath = tesseract_common::getTempPath() + task_name + "_log";
+    tesseract_common::Serialization::toArchiveFileBinary<tesseract_planning::TaskComposerLog>(log, log_filepath);
 
     // Check for successful plan with detailed error logging
     if (!result->context->isSuccessful() || result->context->isAborted()) {
