@@ -78,8 +78,6 @@ target_sources(motion_planning_server PRIVATE src/motion_planning_server.cpp
                 src/plugins/constant_tcp_speed_time_parameterization_task.cpp
                 src/plugins/constant_tcp_speed_time_parameterization_profile.cpp)
 
-add_executable(motion_planning_client src/test_client.cpp)
-
 target_include_directories(motion_planning_server PRIVATE
   ${EIGEN3_INCLUDE_DIRS}
   include
@@ -108,16 +106,9 @@ ament_target_dependencies(motion_planning_server
   tf2_eigen
 )
 
-ament_target_dependencies(motion_planning_client
-  rclcpp
-  pumpkin_msgs
-  geometry_msgs
-)
-
 # Install executables
 install(TARGETS
   motion_planning_server
-  motion_planning_client
   DESTINATION lib/${PROJECT_NAME}
 )
 
