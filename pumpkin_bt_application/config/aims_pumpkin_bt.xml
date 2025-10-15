@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4"
+      main_tree_to_execute="pumpkin_bt_main">
+  <BehaviorTree ID="motion_exec">
+    <Sequence>
+      <ForceSuccess>
+        <StartPointQueueMode/>
+      </ForceSuccess>
+      <Fallback>
+        <RetryUntilSuccessful num_attempts="5">
+          <Sequence>
+            <AddMsgToTextEdit output_text_box="messages_text_edit"
+                              message="Waiting for motion execution approval..."
+                              message_type="info"/>
+            <WaitForGuiInputOnTick button="motion_exec_push_button"/>
+            <AddMsgToTextEdit output_text_box="messages_text_edit"
+                              message="Execution begin..."
+                              message_type="info"/>
+            <Fallback>
+              <Sequence>
+                <ProcessTraj joint_trajectory="{plan}"
+                             point_queue="{queue}"/>
+                <Repeat num_cycles="{num_points}">
+                  <RetryUntilSuccessful num_attempts="10">
+                    <Fallback>
+                      <QueueTrajPoint point_queue="{queue}"
+                                      joint_trajectory="{plan}"/>
+                      <Inverter>
+                        <Sleep msec="200"/>
+                      </Inverter>
+                    </Fallback>
+                  </RetryUntilSuccessful>
+                </Repeat>
+                <Sequence>
+                  <ReactiveFallback>
+                    <CheckAtDestination joint_trajectory="{plan}"/>
+                    <Inverter>
+                      <Sleep msec="60000"/>
+                    </Inverter>
+                  </ReactiveFallback>
+                </Sequence>
+              </Sequence>
+              <Inverter>
+                <Sequence>
+                  <AddMsgToTextEdit output_text_box="messages_text_edit"
+                                    message="Motion execution failed... retrying (is the robot in remote mode with point queue started?)"
+                                    message_type="error"/>
+                </Sequence>
+              </Inverter>
+            </Fallback>
+          </Sequence>
+        </RetryUntilSuccessful>
+        <AddMsgToTextEdit output_text_box="messages_text_edit"
+                          message="Motion execution failed... aborting"
+                          message_type="error"/>
+      </Fallback>
+    </Sequence>
+  </BehaviorTree>
+
+  <BehaviorTree ID="pumpkin_bt_main">
+    <SubTree ID="traj_load_from_yaml"
+             _autoremap="true"/>
+  </BehaviorTree>
+
+  <BehaviorTree ID="traj_load_from_yaml">
+    <Sequence>
+      <WaitForGuiInput button="load_traj_from_yaml_push_button"/>
+      <OpenFileDialog dialog_title="Select a YAML Joint Trajectory file"
+                      file_filter="YAML files (*.yaml)"
+                      selected_file_path="{traj_yaml_file_path}"/>
+      <LoadMotionPlanFromYAML file_path="{traj_yaml_file_path}"
+                              joint_trajectory="{plan}"
+                              num_points="{num_points}"/>
+      <AddMsgToTextEdit output_text_box="messages_text_edit"
+                        message="Successfully loaded YAML trajectory"
+                        message_type="info"/>
+      <PubTrajectoryPreview joint_trajectory="{plan}"/>
+      <SubTree ID="motion_exec"
+               _autoremap="true"/>
+    </Sequence>
+  </BehaviorTree>
+
+  <!-- Description of Node Models (used by Groot) -->
+  <TreeNodesModel>
+    <Action ID="AddMsgToTextEdit"
+            editable="true">
+      <input_port name="output_text_box"/>
+      <input_port name="message"/>
+      <input_port name="message_type"/>
+    </Action>
+    <Action ID="CheckAtDestination"
+            editable="true">
+      <inout_port name="joint_trajectory"/>
+    </Action>
+    <Action ID="LoadMotionPlanFromYAML"
+            editable="true">
+      <input_port name="file_path"/>
+      <output_port name="joint_trajectory"/>
+      <output_port name="num_points"/>
+    </Action>
+    <Action ID="OpenFileDialog"
+            editable="true">
+      <input_port name="dialog_title"/>
+      <input_port name="file_filter"/>
+      <output_port name="selected_file_path"/>
+    </Action>
+    <Action ID="ProcessTraj"
+            editable="true">
+      <input_port name="joint_trajectory"/>
+      <output_port name="point_queue"/>
+    </Action>
+    <Action ID="PubTrajectoryPreview"
+            editable="true">
+      <input_port name="joint_trajectory"/>
+    </Action>
+    <Action ID="QueueTrajPoint"
+            editable="true">
+      <input_port name="point_queue"/>
+      <input_port name="joint_trajectory"/>
+    </Action>
+    <Action ID="StartPointQueueMode"
+            editable="true"/>
+    <Condition ID="WaitForGuiInput"
+               editable="true">
+      <input_port name="button"/>
+    </Condition>
+    <Condition ID="WaitForGuiInputOnTick"
+               editable="true">
+      <input_port name="button"/>
+    </Condition>
+  </TreeNodesModel>
+
+</root>

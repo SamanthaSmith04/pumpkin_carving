@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>PumpkinGUI</class>
+ <widget class="QWidget" name="PumpkinGUI">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>305</width>
+    <height>365</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="QLabel" name="label">
+     <property name="text">
+      <string>AIMS Pumpkin Carving</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <widget class="QPushButton" name="load_traj_from_yaml_push_button">
+       <property name="text">
+        <string>Load Trajectory from YAML</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="QPushButton" name="motion_exec_push_button">
+     <property name="text">
+      <string>Execute Motion</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QTextEdit" name="messages_text_edit"/>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

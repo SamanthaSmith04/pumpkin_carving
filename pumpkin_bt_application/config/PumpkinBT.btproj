@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4" project_name="PumpkinBT">
+    <include path="aims_pumpkin_bt.xml"/>
+    <!-- Description of Node Models (used by Groot) -->
+    <TreeNodesModel>
+        <Action ID="AddMsgToTextEdit" editable="true">
+            <input_port name="output_text_box"/>
+            <input_port name="message"/>
+            <input_port name="message_type"/>
+        </Action>
+        <Action ID="AddTrajectoryToList" editable="true">
+            <inout_port name="trajectory_list"/>
+            <input_port name="joint_trajectory"/>
+            <output_port name="num_trajectories"/>
+        </Action>
+        <Action ID="CheckAtDestination" editable="true">
+            <inout_port name="joint_trajectory"/>
+        </Action>
+        <Condition ID="CheckBTStatus" editable="true">
+            <input_port name="bt_status"/>
+        </Condition>
+        <Condition ID="CheckBTVariableValue" editable="true">
+            <input_port name="variable_name"/>
+            <input_port name="expected_value"/>
+        </Condition>
+        <Condition ID="CheckIntValueEquality" editable="true">
+            <input_port name="value_1"/>
+            <input_port name="value_2"/>
+        </Condition>
+        <Action ID="ClearTrajectory" editable="true">
+            <input_port name="trajectory_key"/>
+        </Action>
+        <Action ID="ClearTrajectoryList" editable="true">
+            <input_port name="trajectory_list"/>
+        </Action>
+        <Action ID="ConcatAllTrajectoryPlans" editable="true">
+            <input_port name="trajectory_plan_list"/>
+            <output_port name="combined_joint_trajectory"/>
+        </Action>
+        <Action ID="ExecuteMotionPlan" editable="true">
+            <input_port name="joint_trajectory"/>
+        </Action>
+        <Action ID="GetComboBoxIndex" editable="true">
+            <input_port name="combo_box"/>
+            <output_port name="combo_box_index"/>
+        </Action>
+        <Action ID="GetCurrentJointState" editable="true">
+            <output_port name="joint_state"/>
+        </Action>
+        <Action ID="GetTrajectoryAtIndex" editable="true">
+            <input_port name="trajectory_list"/>
+            <input_port name="index"/>
+            <output_port name="joint_trajectory"/>
+            <output_port name="num_points"/>
+        </Action>
+        <Action ID="GetValueFromCheckBox" editable="true">
+            <input_port name="gui_check_box_input"/>
+            <output_port name="value"/>
+        </Action>
+        <Action ID="GetValueFromSpinBox" editable="true">
+            <input_port name="gui_spin_box_input"/>
+            <output_port name="value"/>
+        </Action>
+        <Action ID="ListenForPointCloud" editable="true">
+            <output_port name="point_cloud"/>
+        </Action>
+        <Action ID="ListenForTrajectory" editable="true">
+            <output_port name="joint_trajectory"/>
+            <output_port name="num_points"/>
+        </Action>
+        <Action ID="LoadMotionPlanFromYAML" editable="true">
+            <input_port name="file_path"/>
+            <output_port name="joint_trajectory"/>
+            <output_port name="num_points"/>
+        </Action>
+        <Action ID="LoadMotionPlanYAMLsFromDirectory" editable="true">
+            <input_port name="directory_path"/>
+            <output_port name="trajectory_list"/>
+            <output_port name="num_trajectories"/>
+        </Action>
+        <Action ID="LoadPCDFile" editable="true">
+            <input_port name="file_path"/>
+            <output_port name="point_cloud"/>
+        </Action>
+        <Action ID="OpenDirectoryDialog" editable="true">
+            <input_port name="dialog_title"/>
+            <output_port name="selected_directory_path"/>
+        </Action>
+        <Action ID="OpenFileDialog" editable="true">
+            <input_port name="dialog_title"/>
+            <input_port name="file_filter"/>
+            <output_port name="selected_file_path"/>
+        </Action>
+        <Action ID="ProcessTraj" editable="true">
+            <input_port name="joint_trajectory"/>
+            <output_port name="point_queue"/>
+        </Action>
+        <Action ID="PubPointCloud2" editable="true">
+            <input_port name="flash_point_cloud"/>
+        </Action>
+        <Action ID="PubTrajectoryPreview" editable="true">
+            <input_port name="joint_trajectory"/>
+        </Action>
+        <Action ID="QueueTrajPoint" editable="true">
+            <input_port name="point_queue"/>
+            <input_port name="joint_trajectory"/>
+        </Action>
+        <Action ID="ReplaceStartState" editable="true">
+            <input_port name="motion_plan"/>
+        </Action>
+        <Action ID="ResetSpinBoxValue" editable="true">
+            <input_port name="gui_spin_box_input"/>
+        </Action>
+        <Action ID="SaveMotionPlanToYAML" editable="true">
+            <input_port name="file_path"/>
+            <input_port name="joint_trajectory"/>
+        </Action>
+        <Action ID="SavePCDFile" editable="true">
+            <input_port name="file_path"/>
+            <input_port name="point_cloud"/>
+        </Action>
+        <Action ID="SetBlackboardString" editable="true">
+            <input_port name="key"/>
+            <input_port name="value"/>
+        </Action>
+        <Action ID="SetLabelColor" editable="true">
+            <input_port name="label"/>
+            <input_port name="color"/>
+        </Action>
+        <Action ID="StartPointQueueMode" editable="true"/>
+        <Action ID="StopTrajMode" editable="true"/>
+        <Action ID="StoreLastJointState" editable="true">
+            <input_port name="last_joint_trajectory"/>
+            <output_port name="last_joint_state"/>
+        </Action>
+        <Condition ID="WaitForGuiInput" editable="true">
+            <input_port name="button"/>
+        </Condition>
+        <Condition ID="WaitForGuiInputOnTick" editable="true">
+            <input_port name="button"/>
+        </Condition>
+    </TreeNodesModel>
+</root>
