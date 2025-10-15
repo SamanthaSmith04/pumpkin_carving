@@ -1,4 +1,4 @@
-# AIMS Pumpkin Carving Motion Planning + UI
+# 🎃 AIMS Pumpkin Carving Support Package 🎃
 
 ## Workspace Setup
 
@@ -10,7 +10,7 @@ mkdir -p pumpkin_ws/src
 ```
 Clone this repo into `pumpkin_ws/src`
 
-### Tesseract Setup
+### Tesseract Setup 
 ```
 mkdir -p tesseract_ws/src
 vcs import tesseract_ws/src < pumpkin_ws/src/aims_pumpkin/dependencies.repos
