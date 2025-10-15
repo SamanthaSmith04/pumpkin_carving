@@ -43,9 +43,8 @@
   <arg name="min_contact_distance" default="0.0" />
   <arg name="contact_check_lvs_distance" default="0.05" />
   <arg name="ompl_max_planning_time" default="5.0" />
-  <arg name="tcp_max_speed" default="0.25" />
   <arg name="cartesian_tolerance" default="[0.01,0.01,0.01,0.05,0.05,6.28]" />
-  <arg name="cartesian_coefficient" default="[2.5,2.5,2.5,2.5,2.5,0.0]" />
+  <arg name="cartesian_coefficient" default="[10.0,10.0,10.0,2.5,2.5,0.0]" />
 
 
   <node pkg="robot_state_publisher" exec="robot_state_publisher" name="robot_state_publisher" output="screen">

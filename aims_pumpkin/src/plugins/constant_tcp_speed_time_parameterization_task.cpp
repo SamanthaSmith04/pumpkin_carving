@@ -23,7 +23,7 @@ const std::string INOUT_PROGRAM_PORT = "program";
 const std::string INPUT_ENVIRONMENT_PORT = "environment";
 const std::string INPUT_PROFILES_PORT = "profiles";
 
-namespace snp_motion_planning
+namespace aims_pumpkin
 {
 class ConstantTCPSpeedTimeParameterizationTask : public tesseract_planning::TaskComposerTask
 {
@@ -177,11 +177,11 @@ protected:
 using ConstantTCPSpeedTimeParameterizationTaskFactory =
     tesseract_planning::TaskComposerTaskFactory<ConstantTCPSpeedTimeParameterizationTask>;
 
-}  // namespace snp_motion_planning
+}  // namespace aims_pumpkin
 
 #include <tesseract_common/serialization.h>
-TESSERACT_SERIALIZE_ARCHIVES_INSTANTIATE(snp_motion_planning::ConstantTCPSpeedTimeParameterizationTask)
-BOOST_CLASS_EXPORT_IMPLEMENT(snp_motion_planning::ConstantTCPSpeedTimeParameterizationTask)
+TESSERACT_SERIALIZE_ARCHIVES_INSTANTIATE(aims_pumpkin::ConstantTCPSpeedTimeParameterizationTask)
+BOOST_CLASS_EXPORT_IMPLEMENT(aims_pumpkin::ConstantTCPSpeedTimeParameterizationTask)
 
-TESSERACT_ADD_TASK_COMPOSER_NODE_PLUGIN(snp_motion_planning::ConstantTCPSpeedTimeParameterizationTaskFactory,
+TESSERACT_ADD_TASK_COMPOSER_NODE_PLUGIN(aims_pumpkin::ConstantTCPSpeedTimeParameterizationTaskFactory,
                                         ConstantTCPSpeedTimeParameterizationTaskFactory)

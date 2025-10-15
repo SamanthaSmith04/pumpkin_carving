@@ -32,6 +32,15 @@ add_library(${PROJECT_NAME}_plugins SHARED
   src/plugins/constant_tcp_speed_time_parameterization_profile.cpp
 )
 
+target_link_libraries(${PROJECT_NAME}_plugins
+  tesseract::tesseract_common
+  tesseract::tesseract_command_language
+  tesseract::tesseract_task_composer
+  tesseract::tesseract_kinematics_kdl
+  tesseract::tesseract_time_parameterization_core
+  tesseract::tesseract_environment
+)
+
 target_include_directories(${PROJECT_NAME}_plugins PUBLIC
   ${EIGEN3_INCLUDE_DIRS}
   include
@@ -55,6 +64,7 @@ ament_target_dependencies(${PROJECT_NAME}_plugins
   tesseract_motion_planners
   tesseract_kinematics
   tesseract_time_parameterization
+  tesseract_scene_graph
 )
 
 # Configure the plugin library

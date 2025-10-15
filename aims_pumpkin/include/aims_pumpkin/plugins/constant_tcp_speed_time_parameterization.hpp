@@ -35,7 +35,7 @@ Eigen::VectorXd fromKDL(const KDL::Twist& k)
   return out;
 }
 
-namespace snp_motion_planning
+namespace aims_pumpkin
 {
 class ConstantTCPSpeedTimeParameterization
 {
@@ -251,4 +251,4 @@ private:
   const double eq_radius_;
 };
 
-}  // namespace snp_motion_planning
+}  // namespace aims_pumpkin

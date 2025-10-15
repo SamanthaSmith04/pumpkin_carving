@@ -4,7 +4,7 @@
 #include <boost/serialization/nvp.hpp>
 #include <typeindex>
 
-namespace snp_motion_planning
+namespace aims_pumpkin
 {
 ConstantTCPSpeedTimeParameterizationProfile::ConstantTCPSpeedTimeParameterizationProfile()
   : Profile(ConstantTCPSpeedTimeParameterizationProfile::getStaticKey())
@@ -39,8 +39,8 @@ void ConstantTCPSpeedTimeParameterizationProfile::serialize(Archive& ar, const u
   ar& BOOST_SERIALIZATION_NVP(max_velocity_scaling_factor);
   ar& BOOST_SERIALIZATION_NVP(max_acceleration_scaling_factor);
 }
-}  // namespace snp_motion_planning
+}  // namespace aims_pumpkin
 
 #include <tesseract_common/serialization.h>
-TESSERACT_SERIALIZE_ARCHIVES_INSTANTIATE(snp_motion_planning::ConstantTCPSpeedTimeParameterizationProfile)
-BOOST_CLASS_EXPORT_IMPLEMENT(snp_motion_planning::ConstantTCPSpeedTimeParameterizationProfile)
+TESSERACT_SERIALIZE_ARCHIVES_INSTANTIATE(aims_pumpkin::ConstantTCPSpeedTimeParameterizationProfile)
+BOOST_CLASS_EXPORT_IMPLEMENT(aims_pumpkin::ConstantTCPSpeedTimeParameterizationProfile)

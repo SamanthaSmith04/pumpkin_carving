@@ -1,4 +1,5 @@
 #include <rclcpp/rclcpp.hpp>
+#include <vector>
 #include <tesseract_rosutils/utils.h>
 #include <tesseract_environment/environment_monitor.h>
 #include <tesseract_common/macros.h>
@@ -86,7 +87,6 @@ static const std::string ACC_SCALE_PARAM = "acceleration_scaling_factor";
 static const std::string LVS_PARAM = "contact_check_lvs_distance";
 static const std::string MIN_CONTACT_DIST_PARAM = "min_contact_distance";
 static const std::string OMPL_MAX_PLANNING_TIME_PARAM = "ompl_max_planning_time";
-static const std::string TCP_MAX_SPEED_PARAM = "tcp_max_speed";
 static const std::string TRAJOPT_CARTESIAN_TOLERANCE_PARAM = "cartesian_tolerance";
 static const std::string TRAJOPT_CARTESIAN_COEFFICIENT_PARAM = "cartesian_coefficient";
 
@@ -112,6 +112,19 @@ class PlanningServer
       // ROS PARAMETERS
       node_->declare_parameter("robot_description", "");
       node_->declare_parameter("robot_description_semantic", "");
+
+      node_->declare_parameter(MAX_TRANS_VEL_PARAM, 0.05);
+      node_->declare_parameter(MAX_ROT_VEL_PARAM, 1.571);
+      node_->declare_parameter(MAX_TRANS_ACC_PARAM, 0.1);
+      node_->declare_parameter(MAX_ROT_ACC_PARAM, 3.14);
+      node_->declare_parameter(CHECK_JOINT_ACC_PARAM, false);
+      node_->declare_parameter(VEL_SCALE_PARAM, 1.0);
+      node_->declare_parameter(ACC_SCALE_PARAM, 1.0);
+      node_->declare_parameter(LVS_PARAM, 0.01);
+      node_->declare_parameter(MIN_CONTACT_DIST_PARAM, 0.0);
+      node_->declare_parameter(OMPL_MAX_PLANNING_TIME_PARAM, 5.0);
+      node_->declare_parameter(TRAJOPT_CARTESIAN_TOLERANCE_PARAM, std::vector<double>{0.01,0.01,0.01,0.05,0.05,6.28});
+      node_->declare_parameter(TRAJOPT_CARTESIAN_COEFFICIENT_PARAM, std::vector<double>{10.0,10.0,10.0,2.5,2.5,0.0});
 
       auto urdf_string = node_->get_parameter("robot_description").as_string();
       auto srdf_string = node_->get_parameter("robot_description_semantic").as_string();
@@ -294,21 +307,24 @@ class PlanningServer
 
   void updateProfileDictionary(tesseract_planning::ProfileDictionary::Ptr profile_dict)
   {    
-    double min_contact_dist = 0.00;
-    double longest_valid_segment_length = 0.01;
+    double min_contact_dist = node_->get_parameter(MIN_CONTACT_DIST_PARAM).as_double();
+    double longest_valid_segment_length = node_->get_parameter(LVS_PARAM).as_double();
     
-    // Use tighter cartesian tolerance vector (6 DOF)
+    // Use cartesian tolerance vector (6 DOF)
     Eigen::VectorXd cart_tolerance(6);
-    cart_tolerance << 0.000, 0.000, 0.000, 0.050, 0.050, 6.280; 
+    std::vector<double> tol_vec = node_->get_parameter(TRAJOPT_CARTESIAN_TOLERANCE_PARAM).as_double_array();
+    cart_tolerance = Eigen::Map<Eigen::VectorXd>(tol_vec.data(), tol_vec.size());
+    
     Eigen::VectorXd cart_coeff(6);
-    cart_coeff << 10.0, 10.0, 10.0, 2.5, 2.5, 0.0; 
+    std::vector<double> coeff_vec = node_->get_parameter(TRAJOPT_CARTESIAN_COEFFICIENT_PARAM).as_double_array();
+    cart_coeff = Eigen::Map<Eigen::VectorXd>(coeff_vec.data(), coeff_vec.size());
     
     // No collision pairs for now
     std::vector<ExplicitCollisionPair> collision_pairs;
     
     // Default velocity and acceleration scaling factors
-    double velocity_scaling_factor = 1.0;
-    double acceleration_scaling_factor = 1.0;
+    double velocity_scaling_factor = node_->get_parameter(VEL_SCALE_PARAM).as_double();
+    double acceleration_scaling_factor = node_->get_parameter(ACC_SCALE_PARAM).as_double();
 
     // Simple planner
     profile_dict->addProfile(SIMPLE_DEFAULT_NAMESPACE, PROFILE, createSimplePlannerProfile());
@@ -316,7 +332,7 @@ class PlanningServer
     // OMPL
     {
       auto profile = createOMPLProfile(min_contact_dist, collision_pairs, longest_valid_segment_length);
-      profile->solver_config.planning_time = 5.0;  // 5 seconds default
+      profile->solver_config.planning_time = node_->get_parameter(OMPL_MAX_PLANNING_TIME_PARAM).as_double();
       profile_dict->addProfile(OMPL_DEFAULT_NAMESPACE, PROFILE, profile);
     }
 
@@ -342,11 +358,11 @@ class PlanningServer
                                   velocity_scaling_factor, acceleration_scaling_factor));
 
       // Constant TCP time parameterization profile
-      double vel_trans = 0.050;
-      double vel_rot = 1.571;
-      double acc_trans = 0.100;
-      double acc_rot = 3.14;
-      auto cart_time_param_profile = std::make_shared<snp_motion_planning::ConstantTCPSpeedTimeParameterizationProfile>(
+      double vel_trans = node_->get_parameter(MAX_TRANS_VEL_PARAM).as_double();
+      double vel_rot = node_->get_parameter(MAX_ROT_VEL_PARAM).as_double();
+      double acc_trans = node_->get_parameter(MAX_TRANS_ACC_PARAM).as_double();
+      double acc_rot = node_->get_parameter(MAX_ROT_ACC_PARAM).as_double();
+      auto cart_time_param_profile = std::make_shared<aims_pumpkin::ConstantTCPSpeedTimeParameterizationProfile>(
           vel_trans, vel_rot, acc_trans, acc_rot, velocity_scaling_factor, acceleration_scaling_factor);
       profile_dict->addProfile(CONSTANT_TCP_SPEED_TIME_PARAM_TASK_NAME, PROFILE, cart_time_param_profile);
 

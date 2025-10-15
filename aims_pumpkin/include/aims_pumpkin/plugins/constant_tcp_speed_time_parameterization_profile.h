@@ -7,7 +7,7 @@
 
 static const std::string CONSTANT_TCP_SPEED_TIME_PARAM_TASK_NAME = "ConstantTCPSpeedTimeParameterizationTask";
 
-namespace snp_motion_planning
+namespace aims_pumpkin
 {
 struct ConstantTCPSpeedTimeParameterizationProfile : public tesseract_planning::Profile
 {
@@ -40,6 +40,6 @@ protected:
   void serialize(Archive&, const unsigned int);  // NOLINT
 };
 
-}  // namespace snp_motion_planning
+}  // namespace aims_pumpkin
 
-BOOST_CLASS_EXPORT_KEY(snp_motion_planning::ConstantTCPSpeedTimeParameterizationProfile)
+BOOST_CLASS_EXPORT_KEY(aims_pumpkin::ConstantTCPSpeedTimeParameterizationProfile)
