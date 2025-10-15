@@ -3,7 +3,7 @@
 <package format="3">
   <name>aims_pumpkin</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
+  <description>Motion planning server for pumpkin carving</description>
   <maintainer email="smith.15485@osu.edu">Samantha Smith</maintainer>
   <license>TODO: License declaration</license>
 

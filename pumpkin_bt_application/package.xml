@@ -3,7 +3,7 @@
 <package format="3">
   <name>pumpkin_bt_application</name>
   <version>0.0.0</version>
-  <description>TODO Update description
+  <description>Simple GUI for pumpkin carving
   </description>
 
   <maintainer email="smith.15485@osu.edu">Samantha Smith (AIMS Lab @ The Ohio State University)</maintainer>
