@@ -82,7 +82,6 @@
     <param name="min_contact_distance" value="$(var min_contact_distance)"/>
     <param name="contact_check_lvs_distance" value="$(var contact_check_lvs_distance)"/>
     <param name="ompl_max_planning_time" value="$(var ompl_max_planning_time)"/>
-    <param name="tcp_max_speed" value = "$(var tcp_max_speed)"/>
     <param name="cartesian_tolerance" value="$(var cartesian_tolerance)"/>
     <param name="cartesian_coefficient" value="$(var cartesian_coefficient)"/>
   </node>

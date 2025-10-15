@@ -4,6 +4,7 @@
 #include <condition_nodes.hpp>
 #include <bt_ros_nodes.hpp>
 #include <QAbstractButton>
+#include <QTimer>
 #include "ui_pumpkin.h" // will always be "ui_" + <ui file name> + ".h"
 
 namespace pumpkin_widget
@@ -23,8 +24,11 @@ PumpkinGUI::PumpkinGUI(rclcpp::Node::SharedPtr ros_node, QWidget *parent)
   blackboard = BT::Blackboard::create();
 
   // Set blackboard variables
+  blackboard->set("main_gui", static_cast<QWidget*>(this));
   blackboard->set("motion_exec_push_button", static_cast<QAbstractButton*>(ui_->motion_exec_push_button));
   blackboard->set("load_traj_from_yaml_push_button", static_cast<QAbstractButton*>(ui_->load_traj_from_yaml_push_button));
+  blackboard->set("messages_text_edit", static_cast<QTextEdit*>(ui_->messages_text_edit));
+  blackboard->set("project_folder", std::string("/.aims/pumpkin/")); // to be set when a project is loaded
 
   BT::BehaviorTreeFactory factory;
 
@@ -49,6 +53,14 @@ PumpkinGUI::PumpkinGUI(rclcpp::Node::SharedPtr ros_node, QWidget *parent)
   factory.registerNodeType<bt_common_nodes::CheckAtDestination>("CheckAtDestination", joint_state_params);
   
   tree = factory.createTreeFromFile(gui_bt_file, blackboard);
+
+  // Start ticking BehaviorTree
+  QTimer *tree_timer = new QTimer(this);
+  QObject::connect(tree_timer, &QTimer::timeout, [this]() {
+      BT::NodeStatus status = this->tree.tickOnce();
+  });
+  tree_timer->start(10); // Tick every 10 ms
+
 }
 
 PumpkinGUI::~PumpkinGUI()

@@ -8,6 +8,8 @@ find_package(behaviortree_cpp REQUIRED)
 find_package(behaviortree_ros2 REQUIRED)
 find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets)
 find_package(rclcpp REQUIRED)
+find_package(rviz_common REQUIRED)
+find_package(pluginlib REQUIRED)
 find_package(bt_common_nodes REQUIRED)
 find_package(motoros2_interfaces REQUIRED)
 
@@ -74,10 +76,31 @@ target_link_libraries(pumpkin_qt_gui_lib
 add_executable(pumpkin_qt_gui src/main.cpp)
 target_link_libraries(pumpkin_qt_gui pumpkin_qt_gui_lib)
 
+# RViz plugin
+add_library(pumpkin_gui_panel SHARED src/pumpkin_rviz_panel.cpp)
+
+target_include_directories(pumpkin_gui_panel PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+)
+
+target_link_libraries(pumpkin_gui_panel 
+    pumpkin_qt_gui_lib
+    rviz_common::rviz_common
+    pluginlib::pluginlib
+)
+
+ament_target_dependencies(pumpkin_gui_panel
+    ${COMMON_DEPS}
+    rviz_common
+    pluginlib
+)
+
 # Installation
 install(TARGETS 
     pumpkin_qt_gui
     pumpkin_qt_gui_lib
+    pumpkin_gui_panel
     EXPORT ${PROJECT_NAME}_targets
     RUNTIME DESTINATION lib/${PROJECT_NAME}
     LIBRARY DESTINATION lib
@@ -88,6 +111,6 @@ install(DIRECTORY config launch DESTINATION share/${PROJECT_NAME})
 
 # Package export
 ament_export_targets(${PROJECT_NAME}_targets HAS_LIBRARY_TARGET)
-ament_export_dependencies(${COMMON_DEPS} Qt5)
-
+ament_export_dependencies(${COMMON_DEPS} rviz_common pluginlib Qt5)
+pluginlib_export_plugin_description_file(rviz_common config/pumpkin_rviz_panel_plugin_description.xml)
 ament_package()
