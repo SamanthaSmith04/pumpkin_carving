@@ -16,7 +16,8 @@ mkdir -p tesseract_ws/src
 vcs import tesseract_ws/src < pumpkin_ws/src/aims_pumpkin/dependencies.repos
 vcs import tesseract_ws/src < tesseract_ws/src/dependencies.repos # this will take a while
 
-rosdep install --from-paths src -iry
+rosdep install --from-paths tesseract_ws/src -iry
+
 
 cd tesseract_ws
 colcon build --symlink-install --cmake-args -DTESSERACT_BUILD_FCL=OFF -DBUILD_RENDERING=OFF -DBUILD_STUDIO=OFF
