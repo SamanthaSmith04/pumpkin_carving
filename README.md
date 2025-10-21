@@ -18,6 +18,7 @@ vcs import tesseract_ws/src < tesseract_ws/src/dependencies.repos # this will ta
 
 cd tesseract_ws
 
+# ** this step will require sudo permissions **
 rosdep install --from-paths src -iry
 
 colcon build --symlink-install --cmake-args -DTESSERACT_BUILD_FCL=OFF -DBUILD_RENDERING=OFF -DBUILD_STUDIO=OFF
@@ -32,6 +33,7 @@ vcs import pumpkin_deps_ws/src < pumpkin_ws/src/aims_pumpkin/dependencies.repos
 
 cd pumpkin_deps_ws
 
+# ** this step will require sudo permissions **
 rosdep install --from-paths src -iry
 
 colcon build
