@@ -16,11 +16,13 @@ mkdir -p tesseract_ws/src
 vcs import tesseract_ws/src < pumpkin_ws/src/aims_pumpkin/dependencies.repos
 vcs import tesseract_ws/src < tesseract_ws/src/dependencies.repos # this will take a while
 
-rosdep install --from-paths tesseract_ws/src -iry
-
-
 cd tesseract_ws
+
+rosdep install --from-paths src -iry
+
 colcon build --symlink-install --cmake-args -DTESSERACT_BUILD_FCL=OFF -DBUILD_RENDERING=OFF -DBUILD_STUDIO=OFF
+
+cd ..
 ```
 
 ### Dependencies
@@ -28,10 +30,13 @@ colcon build --symlink-install --cmake-args -DTESSERACT_BUILD_FCL=OFF -DBUILD_RE
 mkdir -p pumpkin_deps_ws/src
 vcs import pumpkin_deps_ws/src < pumpkin_ws/src/aims_pumpkin/dependencies.repos
 
+cd pumpkin_deps_ws
+
 rosdep install --from-paths src -iry
 
-cd pumpkin_deps_ws
 colcon build
+
+cd ..
 ```
 
 ### Building Pumpkin
