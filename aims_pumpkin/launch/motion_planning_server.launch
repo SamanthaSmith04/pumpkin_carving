@@ -2,11 +2,11 @@
 <launch>
   <!-- RViz Params-->
   <arg name="robot_description"
-       default="$(command 'xacro $(find-pkg-share motoman_mh50_support)/urdf/workcell.xacro')"
+       default="$(command 'xacro $(find-pkg-share motoman_gp180_support)/urdf/workcell.xacro')"
        description="[String] Path to URDF." />
 
   <arg name="robot_description_semantic" 
-       default="$(command 'cat $(find-pkg-share motoman_mh50_support)/config/mh50.srdf')"
+       default="$(command 'cat $(find-pkg-share motoman_gp180_support)/config/gp180_120.srdf')"
        description="[String] SRDF content." />
   
   <arg name="task_composer_config_file"

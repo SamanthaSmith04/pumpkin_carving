@@ -22,6 +22,7 @@
   <depend>tesseract_task_composer</depend>
   <depend>tesseract_rosutils</depend>
   <depend>eigen3_cmake_module</depend>
+  <depend>motoros2_interfaces</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
