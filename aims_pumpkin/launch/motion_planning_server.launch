@@ -46,6 +46,8 @@
   <arg name="cartesian_tolerance" default="[0.01,0.01,0.01,0.05,0.05,6.28]" />
   <arg name="cartesian_coefficient" default="[10.0,10.0,10.0,2.5,2.5,0.0]" />
 
+  <arg name="offset_distance_z" default="0.10" /> <!-- Offset for start of approach / departure from pumpkin at the ends of each path segment -->
+
 
   <node pkg="robot_state_publisher" exec="robot_state_publisher" name="robot_state_publisher" output="screen">
     <param name="robot_description" value="$(var robot_description)"/>
@@ -84,6 +86,8 @@
     <param name="ompl_max_planning_time" value="$(var ompl_max_planning_time)"/>
     <param name="cartesian_tolerance" value="$(var cartesian_tolerance)"/>
     <param name="cartesian_coefficient" value="$(var cartesian_coefficient)"/>
+
+    <param name="offset_distance_z" value="$(var offset_distance_z)"/>
   </node>
 
   <node pkg="joint_state_publisher_gui" exec="joint_state_publisher_gui" name="joint_state_publisher_gui" output="screen">

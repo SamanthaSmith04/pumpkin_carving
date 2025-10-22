@@ -101,6 +101,7 @@ static const std::string MOTION_GROUP = "manipulator";
 static const std::string TCP_FRAME = "tool0";
 
 static const std::string PROFILE = "PumpkinPipeline";
+static const std::string RETREAT_THRESHOLD = "offset_distance_z"; // parameter name for offset distance
 
 
 class PlanningServer
@@ -125,6 +126,7 @@ class PlanningServer
       node_->declare_parameter(OMPL_MAX_PLANNING_TIME_PARAM, 5.0);
       node_->declare_parameter(TRAJOPT_CARTESIAN_TOLERANCE_PARAM, std::vector<double>{0.01,0.01,0.01,0.05,0.05,6.28});
       node_->declare_parameter(TRAJOPT_CARTESIAN_COEFFICIENT_PARAM, std::vector<double>{10.0,10.0,10.0,2.5,2.5,0.0});
+      node_->declare_parameter(RETREAT_THRESHOLD, 0.0);
 
       auto urdf_string = node_->get_parameter("robot_description").as_string();
       auto srdf_string = node_->get_parameter("robot_description_semantic").as_string();
@@ -159,6 +161,9 @@ class PlanningServer
 
     tesseract_common::Toolpath fromMsg(const std::vector<geometry_msgs::msg::PoseArray>& path)
     {
+
+      double retreat_threshold;
+      node_->get_parameter(RETREAT_THRESHOLD, retreat_threshold);
       tesseract_common::Toolpath tps;
 
       for (const auto& pose_array : path)
@@ -166,12 +171,29 @@ class PlanningServer
         tesseract_common::VectorIsometry3d seg;
         seg.reserve(pose_array.poses.size());
 
+        // add an additional pose at the start of each segment to ensure the robot approaches the surface before starting
+        // will be in the -z direction of the first pose
+        Eigen::Isometry3d first_pose;
+        tf2::fromMsg(pose_array.poses.front(), first_pose);
+        Eigen::Vector3d z_dir_start = first_pose.linear().col(2);
+        Eigen::Isometry3d approach_pose = first_pose;
+        approach_pose.translation() -= retreat_threshold * z_dir_start; // move back
+        seg.push_back(approach_pose);
+
         for (const auto& pose : pose_array.poses)
         {
           Eigen::Isometry3d p;
           tf2::fromMsg(pose, p);
           seg.push_back(p);
         }
+
+        // add an additional pose at the end of each segment to ensure the robot moves away from the surface before transitioning
+        // will be in the -z direction of the end pose
+        Eigen::Isometry3d last_pose = seg.back();
+        Eigen::Vector3d z_dir_end = last_pose.linear().col(2);
+        Eigen::Isometry3d retreat_pose = last_pose;
+        retreat_pose.translation() -= retreat_threshold * z_dir_end; // move back
+        seg.push_back(retreat_pose);
 
         tps.push_back(seg);
       }
@@ -184,23 +206,23 @@ class PlanningServer
         std::shared_ptr<pumpkin_msgs::srv::PlanMotion::Response> response)
     {
 
-// Convert the request path to a Tesseract Toolpath
-            tesseract_common::Toolpath raster_strips = fromMsg(request->path);
-            RCLCPP_INFO(node_->get_logger(), "Received %zu raster strips", raster_strips.size());
+        // Convert the request path to a Tesseract Toolpath
+        tesseract_common::Toolpath raster_strips = fromMsg(request->path);
+        RCLCPP_INFO(node_->get_logger(), "Received %zu raster strips", raster_strips.size());
 
-            Eigen::VectorXd home_position(6); // Assuming 6-DOF
-            home_position << 0.3, 0.0, 0.0, 0.0, 0.0, 0.0;
+        Eigen::VectorXd home_position(6); // Assuming 6-DOF
+        home_position << 0.3, 0.0, 0.0, 0.0, 0.0, 0.0;
 
-            tesseract_common::ManipulatorInfo info;
-            info.manipulator = MOTION_GROUP;
-            info.tcp_frame = TCP_FRAME;
-            info.working_frame = env_->getJointGroup(info.manipulator)->getBaseLinkName();
+        tesseract_common::ManipulatorInfo info;
+        info.manipulator = MOTION_GROUP;
+        info.tcp_frame = TCP_FRAME;
+        info.working_frame = env_->getJointGroup(info.manipulator)->getBaseLinkName();
 
-            std::vector<std::string> joint_names = env_->getJointGroup(info.manipulator)->getJointNames();
+        std::vector<std::string> joint_names = env_->getJointGroup(info.manipulator)->getJointNames();
 
-            // Profile dictionary
-            auto profile_dict = std::make_shared<tesseract_planning::ProfileDictionary>();
-            updateProfileDictionary(profile_dict);
+        // Profile dictionary
+        auto profile_dict = std::make_shared<tesseract_planning::ProfileDictionary>();
+        updateProfileDictionary(profile_dict);
 
         RCLCPP_INFO(node_->get_logger(), "Received motion planning request");
         try {
