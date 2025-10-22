@@ -45,6 +45,7 @@ set(COMMON_DEPS
     behaviortree_ros2
     rclcpp
     bt_common_nodes
+    motoros2_interfaces
 )
 
 # Shared library
