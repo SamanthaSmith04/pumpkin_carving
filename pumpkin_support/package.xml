@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format2.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="2">
+  <name>pumpkin_support</name>
+  <version>0.0.0</version>
+  <description>
+    <p>
+        OSU AIMS Lab - Robotic Pumpkin Carving Tooling
+    </p>
+    <p>
+        This package contains configuration data and CAD files
+        for the physical environment in the AIMS Lab @ Ohio State.
+        Facility: 1314 Kinnear Rd. Columbus, OH 43212
+      </p>
+    <p>
+      <b>Specifications</b>
+    </p>
+    <ul>
+      <li>Motoman GP180-120</li>
+    </ul>
+    <p>
+        Before using any of the configuration files and / or meshes included
+        in this package, be sure to check they are correct for the particular
+        robot model(s) and configuration you intend to use them with.
+      </p>
+  </description>
+  <author>A.C. Buynak</author>
+  <maintainer email="buynak.9@osu.edu">A.C. Buynak (AIMS Lab @ The Ohio State University)</maintainer>
+  <license>Apache 2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <exec_depend>joint_state_publisher_gui</exec_depend>
+  <exec_depend>motoman_gp180_support</exec_depend>
+  <exec_depend>robot_state_publisher</exec_depend>
+  <exec_depend>rviz2</exec_depend>
+  <exec_depend>xacro</exec_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+    <!-- <architecture_independent/> -->
+  </export>
+</package>

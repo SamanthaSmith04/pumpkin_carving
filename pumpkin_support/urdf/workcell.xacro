@@ -1,0 +1,49 @@
+<?xml version="1.0" ?>
+<robot name="workcell" xmlns:xacro="http://ros.org/wiki/xacro">
+
+    <!-- Setup -->
+    <material name="pumpkin_grey">
+      <color rgba="0.7 0.7 0.7 1"/>
+    </material>
+
+    <!-- Global Origin -->
+    <link name="world"/>
+
+    <!-- Robot - Yaskawa Motoman GP180-120 -->
+    <xacro:include filename="$(find motoman_resources)/urdf/common_materials.xacro"/>
+    <xacro:include filename="$(find motoman_gp180_support)/urdf/gp180_120_macro.xacro"/>
+    <xacro:motoman_gp180_120 prefix=""/>
+    <joint name="fix_origin_gp180_120" type="fixed">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <parent link="world"/>
+      <child link="base_link"/>
+    </joint>
+
+    <!-- EOAT PushCorp & Zivid Camera -->
+    <link name="dewalt_router">
+      <visual>
+        <geometry>
+          <mesh filename="package://pumpkin_support/meshes/dewalt_router_visual.stl"/>
+        </geometry>
+        <material name="pumpkin_grey"/>
+      </visual>
+      <collision>
+        <geometry>
+          <mesh filename="package://pumpkin_support/meshes/dewalt_router_collision.stl"/>
+        </geometry>
+      </collision>
+    </link>
+    <joint name="fixed_flange-dewalt_router" type="fixed">
+      <parent link="flange"/>
+      <child link="dewalt_router"/>
+    </joint>
+
+    <!-- TCP -->
+    <link name="router_tcp"/>
+    <joint name="fixed_tcp" type="fixed">
+      <origin xyz="0.246312 0 -0.112387" rpy="${radians(180)} 0 ${radians(180)}"/>
+      <parent link="flange"/>
+      <child link="router_tcp"/>
+    </joint>
+
+</robot>
