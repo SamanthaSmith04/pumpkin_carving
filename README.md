@@ -30,6 +30,8 @@ cd ..
 ```
 mkdir -p pumpkin_deps_ws/src
 vcs import pumpkin_deps_ws/src < pumpkin_ws/src/pumpkin_carving/dependencies.repos
+vcs import pumpkin_deps_ws/src < pumpkin_deps_ws/src/motoros2_client_interface_dependencies/source_deps.repos 
+
 
 cd pumpkin_deps_ws
 
