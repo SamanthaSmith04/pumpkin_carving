@@ -108,7 +108,7 @@ install(TARGETS
     ARCHIVE DESTINATION lib
 )
 
-install(DIRECTORY config launch DESTINATION share/${PROJECT_NAME})
+install(DIRECTORY config DESTINATION share/${PROJECT_NAME})
 
 # Package export
 ament_export_targets(${PROJECT_NAME}_targets HAS_LIBRARY_TARGET)
