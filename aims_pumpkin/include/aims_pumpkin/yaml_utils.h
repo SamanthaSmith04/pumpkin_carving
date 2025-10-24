@@ -212,18 +212,19 @@ struct convert<std::vector<geometry_msgs::msg::PoseArray>>
   static Node encode(const std::vector<geometry_msgs::msg::PoseArray>& rhs)
   {
     Node node;
-    for (const auto& pose_array : rhs) {
-      node.push_back(YAML::convert<geometry_msgs::msg::PoseArray>::encode(pose_array));
-    }
+    Node path_node;
+    for (const auto& pose_array : rhs)
+      path_node.push_back(YAML::convert<geometry_msgs::msg::PoseArray>::encode(pose_array));
+    node["path"] = path_node;
     return node;
   }
   static bool decode(const Node& node, std::vector<geometry_msgs::msg::PoseArray>& rhs)
   {
-    if (!node.IsSequence()) {
+    if (!node["path"] || !node["path"].IsSequence()) {
       return false;
     }
     rhs.clear();
-    for (const auto& n : node) {
+    for (const auto& n : node["path"]) {
       rhs.push_back(n.as<geometry_msgs::msg::PoseArray>());
     }
     return true;
