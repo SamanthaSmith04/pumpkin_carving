@@ -97,8 +97,8 @@ static const std::string TESSERACT_MONITOR_NAMESPACE = "pumpkin_environment";
 static const std::string PLANNING_SERVICE = "generate_motion_plan";
 static const std::string FREESPACE_PLANNING_SERVICE = "generate_freespace_motion_plan";
 
-static const std::string MOTION_GROUP = "manipulator";
-static const std::string TCP_FRAME = "tool0";
+static const std::string MOTION_GROUP = "planning_group";
+static const std::string TCP_FRAME = "router_tcp";
 
 static const std::string PROFILE = "PumpkinPipeline";
 static const std::string RETREAT_THRESHOLD = "offset_distance_z"; // parameter name for offset distance

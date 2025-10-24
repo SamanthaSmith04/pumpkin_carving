@@ -3,7 +3,13 @@
     This is a format for representing semantic information about the robot structure.
     A URDF file must exist for this robot as well, where the joints and the links that are referenced are defined
 -->
-<robot name="scene">
+<robot name="workcell">
+    <!--Groups kinematic plugins -->
+    <kinematics_plugin_config filename="package://aims_pumpkin/config/workcell_plugins.yaml"/>
+
+    <!-- Contact manager plugins -->
+    <contact_managers_plugin_config filename="package://aims_pumpkin/config/workcell_plugins.yaml"/>
+
     <group name="planning_group">
         <joint name="joint_1_s" />
         <joint name="joint_2_l" />
@@ -18,6 +24,23 @@
 
     <virtual_joint name="base_to_world" type="fixed" parent_frame="world_frame" child_link="world"/>
 
-    <!--DISABLE COLLISIONS: By default it is assumed that any link of the robot could potentially come into collision with any other link in the robot. This tag disables collision checking between a specified pair of links. -->
-    <!-- ToDo: Generate Collision Matrix -->
+    <!--DISABLE COLLISIONS By default it is assumed that any link of the robot could potentially come into collision with any other link in the robot. This tag disables collision checking between a specified pair of links. -->
+
+    <disable_collisions link1="base_link" link2="link_1_s" reason="Adjacent"/>
+    <disable_collisions link1="base_link" link2="link_2_l" reason="Never"/>
+    <disable_collisions link1="dewalt_router" link2="link_3_u" reason="Never"/>
+    <disable_collisions link1="dewalt_router" link2="link_4_r" reason="Never"/>
+    <disable_collisions link1="dewalt_router" link2="link_5_b" reason="Never"/>
+    <disable_collisions link1="dewalt_router" link2="link_6_t" reason="Adjacent"/>
+    <disable_collisions link1="link_1_s" link2="link_2_l" reason="Adjacent"/>
+    <disable_collisions link1="link_2_l" link2="link_3_u" reason="Adjacent"/>
+    <disable_collisions link1="link_2_l" link2="link_4_r" reason="Never"/>
+    <disable_collisions link1="link_2_l" link2="link_5_b" reason="Never"/>
+    <disable_collisions link1="link_2_l" link2="link_6_t" reason="Never"/>
+    <disable_collisions link1="link_3_u" link2="link_4_r" reason="Adjacent"/>
+    <disable_collisions link1="link_3_u" link2="link_5_b" reason="Never"/>
+    <disable_collisions link1="link_3_u" link2="link_6_t" reason="Never"/>
+    <disable_collisions link1="link_4_r" link2="link_5_b" reason="Adjacent"/>
+    <disable_collisions link1="link_4_r" link2="link_6_t" reason="Never"/>
+    <disable_collisions link1="link_5_b" link2="link_6_t" reason="Adjacent"/>
 </robot>
