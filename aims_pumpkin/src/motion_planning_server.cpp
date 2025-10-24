@@ -143,8 +143,12 @@ class PlanningServer
         throw std::runtime_error("Failed to initialize environment");
         
       // Create monitor
-      auto monitor = std::make_shared<tesseract_monitoring::ROSEnvironmentMonitor>(node_, env_, TESSERACT_MONITOR_NAMESPACE);
-      monitor->startPublishingEnvironment();
+      tesseract_monitor_ =
+          std::make_shared<tesseract_monitoring::ROSEnvironmentMonitor>(node_, env_, TESSERACT_MONITOR_NAMESPACE);
+      tesseract_monitor_->setEnvironmentPublishingFrequency(30.0);
+      tesseract_monitor_->startPublishingEnvironment();
+      tesseract_monitor_->startStateMonitor(tesseract_monitoring::DEFAULT_JOINT_STATES_TOPIC, false);
+
 
       // Create services
       planning_service_ = node_->create_service<pumpkin_msgs::srv::PlanMotion>(
@@ -156,6 +160,7 @@ class PlanningServer
   private:
     rclcpp::Node::SharedPtr node_;
     tesseract_environment::Environment::Ptr env_;
+    tesseract_monitoring::ROSEnvironmentMonitor::Ptr tesseract_monitor_;
     rclcpp::Service<pumpkin_msgs::srv::PlanMotion>::SharedPtr planning_service_;
     std::string config;
 
@@ -290,11 +295,12 @@ class PlanningServer
                   // Add a move to home position
                 {
                     
-                    tesseract_planning::StateWaypoint home_wp(joint_names, home_position);
+                    // tesseract_planning::StateWaypoint home_wp(joint_names, home_position);
                     tesseract_planning::CompositeInstruction to_end(PROFILE);
                     to_end.setDescription("to_end");
+                                    // Define a move to the start waypoint
                     to_end.push_back(tesseract_planning::MoveInstruction(
-                        home_wp, tesseract_planning::MoveInstructionType::FREESPACE, PROFILE, info));
+                      current_state, tesseract_planning::MoveInstructionType::FREESPACE, PROFILE, info));
                     program.push_back(to_end);
                 }
                   
