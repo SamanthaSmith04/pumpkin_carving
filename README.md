@@ -13,8 +13,8 @@ Clone this repo into `pumpkin_ws/src`
 ### Tesseract Setup 
 ```
 mkdir -p tesseract_ws/src
-vcs import tesseract_ws/src < pumpkin_ws/src/aims_pumpkin/dependencies.repos
-vcs import tesseract_ws/src < tesseract_ws/src/dependencies.repos # this will take a while
+vcs import tesseract_ws/src < pumpkin_ws/src/pumpkin_carving/aims_pumpkin/dependencies.repos
+vcs import tesseract_ws/src < tesseract_ws/src/tesseract_ros2/dependencies.repos # this will take a while
 
 cd tesseract_ws
 
@@ -29,7 +29,7 @@ cd ..
 ### Dependencies
 ```
 mkdir -p pumpkin_deps_ws/src
-vcs import pumpkin_deps_ws/src < pumpkin_ws/src/aims_pumpkin/dependencies.repos
+vcs import pumpkin_deps_ws/src < pumpkin_ws/src/pumpkin_carving/dependencies.repos
 
 cd pumpkin_deps_ws
 
