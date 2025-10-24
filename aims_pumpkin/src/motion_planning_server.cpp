@@ -54,6 +54,7 @@
 #include <aims_pumpkin/plugins/kinematic_limits_check_profile.h>
 #include <aims_pumpkin/plugins/constant_tcp_speed_time_parameterization_profile.h>
 #include <aims_pumpkin/profiles.h>
+#include <tf2_ros/transform_listener.h>
 
 // Additional namespace constants for profiles
 static const std::string TCP_SPEED_LIMITER_TASK_NAME = "TCPSpeedLimiterTask";
@@ -103,6 +104,8 @@ static const std::string TCP_FRAME = "router_tcp";
 static const std::string PROFILE = "PumpkinPipeline";
 static const std::string RETREAT_THRESHOLD = "offset_distance_z"; // parameter name for offset distance
 
+static const std::string PUMPKIN_FRAME = "pumpkin_face";
+
 
 class PlanningServer
 {
@@ -141,7 +144,55 @@ class PlanningServer
       auto locator = std::make_shared<tesseract_rosutils::ROSResourceLocator>();
       if (!env_->init(urdf_string, srdf_string, locator))
         throw std::runtime_error("Failed to initialize environment");
-        
+
+      // add pumpkin face frame to tesseract environment
+      tf2_ros::Buffer tf_buffer(node_->get_clock());
+      tf2_ros::TransformListener tf_listener(tf_buffer);
+
+      geometry_msgs::msg::TransformStamped tf_stamped;
+      try
+      {
+          // wait up to 1 second for the transform
+          tf_stamped = tf_buffer.lookupTransform(
+              "world",      // target frame
+              "pumpkin_face", // source frame
+              tf2::TimePointZero, // latest available
+              tf2::durationFromSec(1.0)
+          );
+      }
+      catch (const tf2::TransformException &ex)
+      {
+          RCLCPP_ERROR(node_->get_logger(), "Could not get transform: %s", ex.what());
+          return;
+      }
+
+      // Convert to Eigen
+      Eigen::Isometry3d pumpkin_transform = Eigen::Isometry3d::Identity();
+      pumpkin_transform = tf2::transformToEigen(tf_stamped);
+      /// print the transform for debugging
+      for (int i = 0; i < 3; ++i)
+      {
+        RCLCPP_INFO(node_->get_logger(), "Translation[%d]: %f", i, tf_stamped.transform.translation.x);
+      }
+
+      tesseract_scene_graph::Link link(PUMPKIN_FRAME);
+      tesseract_scene_graph::Joint joint("pumpkin_frame_joint");
+      joint.parent_link_name = "world";
+      joint.child_link_name = PUMPKIN_FRAME;
+      joint.type = tesseract_scene_graph::JointType::FIXED;
+      joint.parent_to_joint_origin_transform = pumpkin_transform;
+
+      auto cmd = std::make_shared<tesseract_environment::AddLinkCommand>(link, joint);
+      env_->applyCommand(cmd);
+
+      // print all link names
+      for (const auto& link_name : env_->getLinkNames())
+      {
+        RCLCPP_INFO(node_->get_logger(), "Link: %s", link_name.c_str());
+        //print position of link
+        const auto& link = env_->getLink(link_name);
+      }
+
       // Create monitor
       tesseract_monitor_ =
           std::make_shared<tesseract_monitoring::ROSEnvironmentMonitor>(node_, env_, TESSERACT_MONITOR_NAMESPACE);
@@ -221,7 +272,7 @@ class PlanningServer
         tesseract_common::ManipulatorInfo info;
         info.manipulator = MOTION_GROUP;
         info.tcp_frame = TCP_FRAME;
-        info.working_frame = env_->getJointGroup(info.manipulator)->getBaseLinkName();
+        info.working_frame = PUMPKIN_FRAME;
 
         std::vector<std::string> joint_names = env_->getJointGroup(info.manipulator)->getJointNames();
 
