@@ -40,6 +40,11 @@
         <Action ID="ExecuteMotionPlan" editable="true">
             <input_port name="joint_trajectory"/>
         </Action>
+        <Action ID="GenerateMotionPlan" editable="true">
+            <input_port name="pose_list"/>
+            <output_port name="joint_trajectory"/>
+            <output_port name="num_points"/>
+        </Action>
         <Action ID="GetComboBoxIndex" editable="true">
             <input_port name="combo_box"/>
             <output_port name="combo_box_index"/>
@@ -82,6 +87,10 @@
             <input_port name="file_path"/>
             <output_port name="point_cloud"/>
         </Action>
+        <Action ID="LoadPosesListFromYAML" editable="true">
+            <input_port name="file_path"/>
+            <output_port name="pose_array_list"/>
+        </Action>
         <Action ID="OpenDirectoryDialog" editable="true">
             <input_port name="dialog_title"/>
             <output_port name="selected_directory_path"/>
@@ -97,6 +106,9 @@
         </Action>
         <Action ID="PubPointCloud2" editable="true">
             <input_port name="flash_point_cloud"/>
+        </Action>
+        <Action ID="PubPoseArrayPreview" editable="true">
+            <input_port name="pose_array"/>
         </Action>
         <Action ID="PubTrajectoryPreview" editable="true">
             <input_port name="joint_trajectory"/>

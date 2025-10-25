@@ -22,15 +22,18 @@
     </widget>
    </item>
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout">
-     <item>
-      <widget class="QPushButton" name="load_traj_from_yaml_push_button">
-       <property name="text">
-        <string>Load Trajectory from YAML</string>
-       </property>
-      </widget>
-     </item>
-    </layout>
+    <widget class="QPushButton" name="load_poses_from_file_push_button">
+     <property name="text">
+      <string>Load PoseArray[] from YAML</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="load_traj_from_yaml_push_button">
+     <property name="text">
+      <string>Load Trajectory from YAML</string>
+     </property>
+    </widget>
    </item>
    <item>
     <widget class="QPushButton" name="motion_exec_push_button">

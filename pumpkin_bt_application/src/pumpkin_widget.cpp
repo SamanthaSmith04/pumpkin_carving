@@ -3,6 +3,7 @@
 #include <action_nodes.hpp>
 #include <condition_nodes.hpp>
 #include <bt_ros_nodes.hpp>
+#include "bt_nodes/bt_nodes_pumpkin.hpp"
 #include <QAbstractButton>
 #include <QTimer>
 #include "ui_pumpkin.h" // will always be "ui_" + <ui file name> + ".h"
@@ -27,6 +28,7 @@ PumpkinGUI::PumpkinGUI(rclcpp::Node::SharedPtr ros_node, QWidget *parent)
   blackboard->set("main_gui", static_cast<QWidget*>(this));
   blackboard->set("motion_exec_push_button", static_cast<QAbstractButton*>(ui_->motion_exec_push_button));
   blackboard->set("load_traj_from_yaml_push_button", static_cast<QAbstractButton*>(ui_->load_traj_from_yaml_push_button));
+  blackboard->set("load_poses_from_file_push_button", static_cast<QAbstractButton*>(ui_->load_poses_from_file_push_button));
   blackboard->set("messages_text_edit", static_cast<QTextEdit*>(ui_->messages_text_edit));
   blackboard->set("project_folder", std::string("/.aims/pumpkin/")); // to be set when a project is loaded
 
@@ -41,6 +43,7 @@ PumpkinGUI::PumpkinGUI(rclcpp::Node::SharedPtr ros_node, QWidget *parent)
   factory.registerNodeType<bt_common_nodes::LoadMotionPlanFromYAML>("LoadMotionPlanFromYAML");
   factory.registerNodeType<bt_common_nodes::AddMsgToTextEdit>("AddMsgToTextEdit");
   factory.registerNodeType<bt_common_nodes::ProcessTraj>("ProcessTraj");
+  factory.registerNodeType<bt_pumkin_nodes::LoadPosesListFromYAML>("LoadPosesListFromYAML");
   
   // link ros topics, services, and actions
   auto pub_traj_params = BT::RosNodeParams(ros_node_, "trajectory");
@@ -52,6 +55,12 @@ PumpkinGUI::PumpkinGUI(rclcpp::Node::SharedPtr ros_node, QWidget *parent)
   auto joint_state_params = BT::RosNodeParams(ros_node_, "/motoman/joint_states");
   factory.registerNodeType<bt_common_nodes::CheckAtDestination>("CheckAtDestination", joint_state_params);
   
+  auto generate_motion_plan_params = BT::RosNodeParams(ros_node_, "generate_motion_plan");
+  factory.registerNodeType<bt_pumkin_nodes::GenerateMotionPlan>("GenerateMotionPlan", generate_motion_plan_params);
+
+  auto publish_pose_array_params = BT::RosNodeParams(ros_node_, "loaded_pose_array");
+  factory.registerNodeType<bt_pumkin_nodes::PubPoseArrayPreview>("PubPoseArrayPreview", publish_pose_array_params);
+
   tree = factory.createTreeFromFile(gui_bt_file, blackboard);
 
   // Start ticking BehaviorTree

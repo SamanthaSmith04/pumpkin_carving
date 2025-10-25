@@ -11,6 +11,7 @@ find_package(rclcpp REQUIRED)
 find_package(rviz_common REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(bt_common_nodes REQUIRED)
+find_package(pumpkin_msgs REQUIRED)
 find_package(motoros2_interfaces REQUIRED)
 
 find_package(MPI REQUIRED)
@@ -46,6 +47,7 @@ set(COMMON_DEPS
     rclcpp
     bt_common_nodes
     motoros2_interfaces
+    pumpkin_msgs
 )
 
 # Shared library
@@ -65,6 +67,7 @@ target_include_directories(pumpkin_qt_gui_lib PUBLIC
     $<INSTALL_INTERFACE:include>
     ${PCL_INCLUDE_DIRS}
     $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+    $<BUILD_INTERFACE:${bt_common_nodes_INCLUDE_DIRS}>
 )
 
 ament_target_dependencies(pumpkin_qt_gui_lib ${COMMON_DEPS})
@@ -109,7 +112,7 @@ install(TARGETS
 )
 
 install(DIRECTORY config DESTINATION share/${PROJECT_NAME})
-
+install(DIRECTORY include/ DESTINATION include)
 # Package export
 ament_export_targets(${PROJECT_NAME}_targets HAS_LIBRARY_TARGET)
 ament_export_dependencies(${COMMON_DEPS} rviz_common pluginlib Qt5)
