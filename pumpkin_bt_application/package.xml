@@ -17,6 +17,7 @@
   <depend>rclcpp</depend>
   <depend>bt_common_nodes</depend>
   <depend>motoros2_interfaces</depend>
+  <depend>pumpkin_msgs</depend>
   
   <export>
     <build_type>ament_cmake</build_type>
