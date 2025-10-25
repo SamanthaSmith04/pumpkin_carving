@@ -117,6 +117,9 @@ public:
         msg.poses.push_back(pose);
       }
     }
+    msg.header.stamp = rclcpp::Clock().now();
+    msg.header.frame_id = "pumpkin_face";
+
     return true;
   }
 

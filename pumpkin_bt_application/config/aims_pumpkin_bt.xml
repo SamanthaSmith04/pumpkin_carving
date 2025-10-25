@@ -21,7 +21,7 @@
                 <ProcessTraj joint_trajectory="{plan}"
                              point_queue="{queue}"/>
                 <Repeat num_cycles="{num_points}">
-                  <RetryUntilSuccessful num_attempts="10">
+                  <RetryUntilSuccessful num_attempts="100">
                     <Fallback>
                       <QueueTrajPoint point_queue="{queue}"
                                       joint_trajectory="{plan}"/>

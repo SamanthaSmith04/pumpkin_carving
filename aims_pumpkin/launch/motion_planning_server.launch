@@ -35,10 +35,13 @@
   <arg name="raster_task_name" default="SNPPipeline" />
   <arg name="freespace_task_name" default="SNPFreespacePipeline" />
   <!-- Motion Profile Parameters -->
-  <arg name="velocity_scaling_factor" default="1.0" />
-  <arg name="acceleration_scaling_factor" default="1.0" />
-  <arg name="max_translational_vel" default="0.050" />
-  <arg name="max_rotational_vel" default="1.571" />
+  <!-- FREESPACE -->
+  <arg name="velocity_scaling_factor" default="0.7" />
+  <arg name="acceleration_scaling_factor" default="0.7" />
+  
+  <!-- CARTESIAN -->
+  <arg name="max_translational_vel" default="0.008" />
+  <arg name="max_rotational_vel" default="0.2" />
   <arg name="max_translational_acc" default="0.100" />
   <arg name="max_rotational_acc" default="3.14" />
   <arg name="check_joint_accelerations" default="false" />
