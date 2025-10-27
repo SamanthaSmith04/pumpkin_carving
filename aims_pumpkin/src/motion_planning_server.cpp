@@ -198,7 +198,7 @@ class PlanningServer
           std::make_shared<tesseract_monitoring::ROSEnvironmentMonitor>(node_, env_, TESSERACT_MONITOR_NAMESPACE);
       tesseract_monitor_->setEnvironmentPublishingFrequency(30.0);
       tesseract_monitor_->startPublishingEnvironment();
-      tesseract_monitor_->startStateMonitor(tesseract_monitoring::DEFAULT_JOINT_STATES_TOPIC, false);
+      tesseract_monitor_->startStateMonitor("/phantom/joint_states", false);
 
 
       // Create services
@@ -275,21 +275,31 @@ class PlanningServer
         info.working_frame = PUMPKIN_FRAME;
 
         std::vector<std::string> joint_names = env_->getJointGroup(info.manipulator)->getJointNames();
-
+        
         // Profile dictionary
         auto profile_dict = std::make_shared<tesseract_planning::ProfileDictionary>();
         updateProfileDictionary(profile_dict);
-
+        
         RCLCPP_INFO(node_->get_logger(), "Received motion planning request");
         try {
-
+          
           std::vector<std::string> joint_names = env_->getJointGroup(info.manipulator)->getJointNames();
           
+          for (int i = 0; i < joint_names.size(); ++i)
+          {
+            RCLCPP_INFO(node_->get_logger(), "Joint %d: %s", i, joint_names[i].c_str());
+          }
           tesseract_planning::CompositeInstruction program(PROFILE, info);
           program.setDescription("input_program");
           
           // Define the current state
           tesseract_planning::StateWaypoint current_state(joint_names, env_->getCurrentJointValues(joint_names));
+
+          auto jv = env_->getCurrentJointValues(joint_names);
+          for (int i = 0; i < jv.size(); ++i)
+          {
+            RCLCPP_INFO(node_->get_logger(), "Current Joint %d value: %f", i, jv[i]);
+          }
           
           // Add a freespace move from the current state to the first waypoint
               // From start - must be first

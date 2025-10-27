@@ -24,7 +24,7 @@
        description="[String] Path to RViz config file." />
 
   <node pkg="joint_state_publisher" exec="joint_state_publisher">
-    <param name="source_list" value="[sim_joint_states, joint_state_broadcaster/joint_states, ctrl_groups/r1/joint_states]"/>
+    <param name="source_list" value="[phantom/joint_states]"/>
   </node>
   <!-- Scan Link -->
   <arg name="collision_object_type" default="convex_mesh" description="Collision model representation" />

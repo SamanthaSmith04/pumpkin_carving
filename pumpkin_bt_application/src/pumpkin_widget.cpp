@@ -52,7 +52,7 @@ PumpkinGUI::PumpkinGUI(rclcpp::Node::SharedPtr ros_node, QWidget *parent)
   factory.registerNodeType<bt_common_nodes::StartPointQueueMode>("StartPointQueueMode", start_point_queue_params);
   auto queue_traj_params = BT::RosNodeParams(ros_node_, "queue_traj_point");
   factory.registerNodeType<bt_common_nodes::QueueTrajPoint>("QueueTrajPoint", queue_traj_params);
-  auto joint_state_params = BT::RosNodeParams(ros_node_, "/motoman/joint_states");
+  auto joint_state_params = BT::RosNodeParams(ros_node_, "/phantom/joint_states");
   factory.registerNodeType<bt_common_nodes::CheckAtDestination>("CheckAtDestination", joint_state_params);
   
   auto generate_motion_plan_params = BT::RosNodeParams(ros_node_, "generate_motion_plan");
