@@ -2,7 +2,7 @@
 
 ## Workspace Setup
 
-```
+```bash
 mkdir aims_pumpkin_carving
 cd aims_pumpkin_carving
 
@@ -11,7 +11,7 @@ mkdir -p pumpkin_ws/src
 Clone this repo into `pumpkin_ws/src`
 
 ### Tesseract Setup 
-```
+```bash
 mkdir -p tesseract_ws/src
 vcs import tesseract_ws/src < pumpkin_ws/src/pumpkin_carving/aims_pumpkin/dependencies.repos
 vcs import tesseract_ws/src < tesseract_ws/src/tesseract_ros2/dependencies.repos # this will take a while
@@ -27,7 +27,7 @@ cd ..
 ```
 
 ### Dependencies
-```
+```bash
 mkdir -p pumpkin_deps_ws/src
 vcs import pumpkin_deps_ws/src < pumpkin_ws/src/pumpkin_carving/dependencies.repos
 vcs import pumpkin_deps_ws/src < pumpkin_deps_ws/src/motoros2_client_interface_dependencies/source_deps.repos 
@@ -44,7 +44,7 @@ cd ..
 ```
 
 ### Building Pumpkin
-```
+```bash
 cd pumpkin_ws
 source ../tesseract_ws/install/setup.bash
 source ../pumpkin_deps_ws/install/setup.bash
@@ -53,7 +53,7 @@ source install/setup.bash
 ``` 
 ## Running the Application
 
-```
+```bash
 ros2 launch aims_pumpkin  motion_planning_server.launch
 ```
 
@@ -83,9 +83,10 @@ The motion planner will process the paths in this order:
 ## Service Response
 The service will respond with a `pumpkin_msgs/srv/PlanMotion_Response` message, which, if successful, will contain a `tesseract_msgs/msg/JointTrajectory` message that can be executed on the robot. The client will need to save this trajectory message to a YAML file to be loaded into the UI for execution.
 
-A utility already exists for C++ in [`bt_common_nodes/include/yaml_utils.h`](https://github.com/SamanthaSmith04/behavior-tree-examples/blob/main/bt_common_nodes/include/yaml_utils.hpp) that can be used to save the trajectory message to a YAML file (this file should be included in the bt_common_nodes package in the pumpkin_deps_ws workspace).
-
 ### Using the YAML Utility from the Client C++
+
+A utility already exists for C++ in [`aims_pumpkin/include/aims_pumpkin/yaml_utils.h`](https://github.com/SamanthaSmith04/pumpkin_carving/blob/main/aims_pumpkin/include/aims_pumpkin/yaml_utils.h) that can be used to save the trajectory message to a YAML file. (either include this package in your CMakeLists or copy the file into your include folder and include the CMakeLists updates below)
+
 ```cpp
 #include "yaml_utils.h"
 #include <tesseract_msgs/msg/joint_trajectory.hpp>
@@ -105,6 +106,17 @@ catch (const std::exception& e) {
 std::ofstream fout("path_to_save_trajectory.yaml");
 fout << yaml;
 fout.close();
+```
+
+(If you copied yaml_utils.hpp into your package) In your `CMakeLists.txt` (replace project name with the correct target):
+```cmake
+find_package(yaml-cpp REQUIRED)
+
+ament_target_dependencies(<PROJECT_NAME> yaml-cpp)
+
+target_link_libraries(<PROJECT_NAME>
+    yaml-cpp
+)
 ```
   
 If your client implementation uses Python, another utility exists from the part line grinding project that can be found [here](https://github.com/OSU-AIMS/012350-pl-grind/blob/main/plg_test/scripts/export_utility.py).
