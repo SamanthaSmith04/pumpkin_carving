@@ -25,6 +25,7 @@
 
   <node pkg="joint_state_publisher" exec="joint_state_publisher">
     <param name="source_list" value="[phantom/joint_states]"/>
+    <param name="publish_default_positions" value="false"/>
   </node>
   <!-- Scan Link -->
   <arg name="collision_object_type" default="convex_mesh" description="Collision model representation" />

@@ -262,6 +262,7 @@ class PlanningServer
         std::shared_ptr<pumpkin_msgs::srv::PlanMotion::Response> response)
     {
 
+        tesseract_monitor_->updateEnvironmentWithCurrentState();
         // Convert the request path to a Tesseract Toolpath
         tesseract_common::Toolpath raster_strips = fromMsg(request->path);
         RCLCPP_INFO(node_->get_logger(), "Received %zu raster strips", raster_strips.size());
@@ -555,7 +556,7 @@ class PlanningServer
 int main(int argc, char** argv)
 {
   rclcpp::init(argc, argv);
-  auto node = std::make_shared<rclcpp::Node>("motion_planning_server");
+  auto node = std::make_shared<rclcpp::Node>("motion_planner_server");
   auto server = std::make_shared<PlanningServer>(node);
   rclcpp::spin(node);
   rclcpp::shutdown();
