@@ -99,7 +99,7 @@
   <group if="$(var sim_robot)">
     <node pkg="joint_state_publisher_gui" exec="joint_state_publisher_gui" name="joint_state_publisher_gui" output="screen">
       <param name="robot_description" value="$(var robot_description)" />
-      <remap from="joint_states" to="sim_joint_states" />
+      <remap from="joint_states" to="phantom/joint_states" />
     </node>
   </group>
   
