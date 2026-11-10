@@ -22,6 +22,31 @@
     </widget>
    </item>
    <item>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <widget class="QLabel" name="label_2">
+       <property name="text">
+        <string>Motion Planner:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="motion_planner_combo_box">
+       <item>
+        <property name="text">
+         <string>RoboDK</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Tesseract</string>
+        </property>
+       </item>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
     <widget class="QPushButton" name="load_poses_from_file_push_button">
      <property name="text">
       <string>Load PoseArray[] from YAML</string>

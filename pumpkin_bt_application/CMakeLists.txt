@@ -13,6 +13,7 @@ find_package(pluginlib REQUIRED)
 find_package(bt_common_nodes REQUIRED)
 find_package(pumpkin_msgs REQUIRED)
 find_package(motoros2_interfaces REQUIRED)
+find_package(Python3 REQUIRED COMPONENTS Development Interpreter)
 
 find_package(MPI REQUIRED)
 if(NOT TARGET MPI::MPI_C)
@@ -68,12 +69,14 @@ target_include_directories(pumpkin_qt_gui_lib PUBLIC
     ${PCL_INCLUDE_DIRS}
     $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
     $<BUILD_INTERFACE:${bt_common_nodes_INCLUDE_DIRS}>
+    ${Python3_INCLUDE_DIRS}
 )
 
 ament_target_dependencies(pumpkin_qt_gui_lib ${COMMON_DEPS})
 
 target_link_libraries(pumpkin_qt_gui_lib
     Qt5::Widgets
+    ${Python3_LIBRARIES}
 )
 
 # Main executable

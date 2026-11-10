@@ -27,6 +27,7 @@ PumpkinGUI::PumpkinGUI(rclcpp::Node::SharedPtr ros_node, QWidget *parent)
   // Set blackboard variables
   blackboard->set("main_gui", static_cast<QWidget*>(this));
   blackboard->set("motion_exec_push_button", static_cast<QAbstractButton*>(ui_->motion_exec_push_button));
+  blackboard->set("motion_planner_combo_box", static_cast<QComboBox*>(ui_->motion_planner_combo_box));
   blackboard->set("load_traj_from_yaml_push_button", static_cast<QAbstractButton*>(ui_->load_traj_from_yaml_push_button));
   blackboard->set("load_poses_from_file_push_button", static_cast<QAbstractButton*>(ui_->load_poses_from_file_push_button));
   blackboard->set("messages_text_edit", static_cast<QTextEdit*>(ui_->messages_text_edit));
@@ -43,8 +44,12 @@ PumpkinGUI::PumpkinGUI(rclcpp::Node::SharedPtr ros_node, QWidget *parent)
   factory.registerNodeType<bt_common_nodes::LoadMotionPlanFromYAML>("LoadMotionPlanFromYAML");
   factory.registerNodeType<bt_common_nodes::AddMsgToTextEdit>("AddMsgToTextEdit");
   factory.registerNodeType<bt_common_nodes::ProcessTraj>("ProcessTraj");
+  factory.registerNodeType<bt_common_nodes::CheckIntValueEquality>("CheckIntValueEquality");
   factory.registerNodeType<bt_pumkin_nodes::LoadPosesListFromYAML>("LoadPosesListFromYAML");
-  
+  factory.registerNodeType<bt_pumkin_nodes::GetTFPose>("GetTFPose");
+  factory.registerNodeType<bt_pumkin_nodes::GetComboBoxValue>("GetComboBoxValue");
+  factory.registerNodeType<bt_pumkin_nodes::GenerateRoboDKMotionPlan>("GenerateRoboDKMotionPlan");
+
   // link ros topics, services, and actions
   auto pub_traj_params = BT::RosNodeParams(ros_node_, "trajectory");
   factory.registerNodeType<bt_common_nodes::PubTrajectoryPreview>("PubTrajectoryPreview", pub_traj_params);

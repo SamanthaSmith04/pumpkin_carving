@@ -77,9 +77,29 @@
                         message="Pose array loaded.. generating motion plan"
                         message_type="info"/>
       <Fallback>
-        <GenerateMotionPlan pose_list="{pose_list}"
-                            joint_trajectory="{plan}"
-                            num_points="{num_points}"/>
+        <Sequence>
+          <GetComboBoxValue combo_box="motion_planner_combo_box"
+                            combo_box_value="{combo_box_idx}"/>
+          <Fallback>
+            <Sequence>
+              <CheckIntValueEquality value_1="{combo_box_idx}"
+                                     value_2="1"/>
+              <GenerateMotionPlan pose_list="{pose_list}"
+                                  joint_trajectory="{plan}"
+                                  num_points="{num_points}"
+                                  _description="Tesseract&#10;"/>
+            </Sequence>
+            <Sequence>
+              <GetTFPose target_frame="pumpkin_face"
+                         source_frame="world"
+                         pose_output="{pumpkin_face_tf}"/>
+              <GenerateRoboDKMotionPlan pose_list="{pose_list}"
+                                        pumpkin_face_frame="{pumpkin_face_tf}"
+                                        joint_trajectory="{plan}"
+                                        num_points="{num_points}"/>
+            </Sequence>
+          </Fallback>
+        </Sequence>
         <Inverter>
           <AddMsgToTextEdit output_text_box="messages_text_edit"
                             message="Failed to generate motion plan"
@@ -132,11 +152,34 @@
             editable="true">
       <inout_port name="joint_trajectory"/>
     </Action>
+    <Condition ID="CheckIntValueEquality"
+               editable="true">
+      <input_port name="value_1"/>
+      <input_port name="value_2"/>
+    </Condition>
     <Action ID="GenerateMotionPlan"
             editable="true">
       <input_port name="pose_list"/>
       <output_port name="joint_trajectory"/>
       <output_port name="num_points"/>
+    </Action>
+    <Action ID="GenerateRoboDKMotionPlan"
+            editable="true">
+      <input_port name="pose_list"/>
+      <input_port name="pumpkin_face_frame"/>
+      <output_port name="joint_trajectory"/>
+      <output_port name="num_points"/>
+    </Action>
+    <Action ID="GetComboBoxValue"
+            editable="true">
+      <input_port name="combo_box"/>
+      <output_port name="combo_box_value"/>
+    </Action>
+    <Action ID="GetTFPose"
+            editable="true">
+      <input_port name="target_frame"/>
+      <input_port name="source_frame"/>
+      <output_port name="pose_output"/>
     </Action>
     <Action ID="LoadMotionPlanFromYAML"
             editable="true">
