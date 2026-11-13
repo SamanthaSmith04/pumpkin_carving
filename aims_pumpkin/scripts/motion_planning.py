@@ -49,17 +49,61 @@ class RoboDKPlanner(Node):
         self.tf_buffer = tf2_ros.Buffer()
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
 
+        self.timer_tcp = self.create_timer(1.0, self.get_transforms_callback_tcp)
+        self.timer_pumpkin_face = self.create_timer(1.0, self.get_transforms_callback_pumpkin_face)
+        self.initialized = False
+
+
+    def get_transforms_callback_pumpkin_face(self):
         try:
-            # Wait up to 1 second for the transform
             tf_stamped = self.tf_buffer.lookup_transform(
                 'world',         # target frame
                 'pumpkin_face',  # source frame
                 Time(),          # latest available (equivalent to tf2::TimePointZero)
                 timeout=Duration(seconds=1.0)
             )
+            self.pumpkin_face_frame = tf_stamped.transform
+            self.get_logger().info(f"Pumpkin face transform received: {self.pumpkin_face_frame}")
+            self.timer_pumpkin_face.cancel()  # Stop timer once successful
+
         except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException) as e:
-            self.get_logger().error(f'Could not get transform: {e}')
-        
+            self.get_logger().warn(f'Waiting for pumpkin_face transform... {e}')
+    def get_transforms_callback_tcp(self):
+        if self.initialized:
+            return
+
+        try:
+            # 1. Lookup world -> base_link (or check root frame)
+            # 2. Lookup tool0 -> router_tcp
+            self.get_logger().info("Attempting to lookup TCP transform...")
+            tf_stamped = self.tf_buffer.lookup_transform(
+                'tool0',        # URDF flange frame
+                'router_tcp',   # TCP frame
+                rclpy.time.Time(),
+                timeout=Duration(seconds=2.0)
+            )
+            
+            self.get_logger().info(f"TCP transform received successfully: {tf_stamped.transform}")
+            self.initialized = True
+            self.tcp_frame = tf_stamped.transform
+            tcp_translation = self.tcp_frame.translation
+            tcp_rotation = self.tcp_frame.rotation
+            tcp_rot_matrix = R.from_quat([
+                tcp_rotation.x, tcp_rotation.y, tcp_rotation.z, tcp_rotation.w
+            ]).as_matrix()
+            tcp_pose = Mat([
+                [tcp_rot_matrix[0][0], tcp_rot_matrix[0][1], tcp_rot_matrix[0][2], tcp_translation.x * 1000.0],
+                [tcp_rot_matrix[1][0], tcp_rot_matrix[1][1], tcp_rot_matrix[1][2], tcp_translation.y * 1000.0],
+                [tcp_rot_matrix[2][0], tcp_rot_matrix[2][1], tcp_rot_matrix[2][2], tcp_translation.z * 1000.0],
+                [0, 0, 0, 1]
+            ])
+            self.robot.setTool(tcp_pose)
+            self.get_logger().info(f"TCP frame transform received: {self.tcp_frame}")
+            self.timer_tcp.cancel() # Stop timer once successful
+
+
+        except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException) as e:
+            self.get_logger().warn(f'Waiting for transforms... {e}')
 
     def joint_state_callback(self, msg):
         self.get_logger().info(f"Received joint states with {len(msg.position)} positions")
@@ -104,14 +148,14 @@ class RoboDKPlanner(Node):
 
                 # 3. Apply pumpkin_face frame transformation if available (in millimeters)
                 if self.pumpkin_face_frame is not None:
-                    pumpkin_face_position = [self.pumpkin_face_frame.position.x * 1000, 
-                                            self.pumpkin_face_frame.position.y * 1000, 
-                                            self.pumpkin_face_frame.position.z * 1000]  
+                    pumpkin_face_position = [self.pumpkin_face_frame.transform.translation.x * 1000, 
+                                            self.pumpkin_face_frame.transform.translation.y * 1000, 
+                                            self.pumpkin_face_frame.transform.translation.z * 1000]  
 
-                    pumpkin_face_rot_matrix = R.from_quat([self.pumpkin_face_frame.orientation.x, 
-                                                            self.pumpkin_face_frame.orientation.y, 
-                                                            self.pumpkin_face_frame.orientation.z, 
-                                                            self.pumpkin_face_frame.orientation.w]).as_matrix()
+                    pumpkin_face_rot_matrix = R.from_quat([self.pumpkin_face_frame.transform.rotation.x, 
+                                                            self.pumpkin_face_frame.transform.rotation.y, 
+                                                            self.pumpkin_face_frame.transform.rotation.z, 
+                                                            self.pumpkin_face_frame.transform.rotation.w]).as_matrix()
 
                     robodk_position = [
                         pumpkin_face_rot_matrix[0][0] * robodk_position[0] + pumpkin_face_rot_matrix[0][1] * robodk_position[1] + pumpkin_face_rot_matrix[0][2] * robodk_position[2] + pumpkin_face_position[0],

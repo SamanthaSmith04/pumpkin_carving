@@ -66,7 +66,7 @@
     <arg name="preview_joint_states_topic" value="/trajectory/joint_states"/>
   </include>
 
-  <node pkg="aims_pumpkin" exec="motion_planning.py" name="c" output="screen">
+  <node pkg="aims_pumpkin" exec="motion_planning.py" name="motion_planner_robo_dk" output="screen">
   </node>
 
   <node pkg="aims_pumpkin" exec="motion_planning_server" name="motion_planning_server" output="screen">
