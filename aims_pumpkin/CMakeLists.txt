@@ -112,6 +112,11 @@ install(TARGETS
   DESTINATION lib/${PROJECT_NAME}
 )
 
+install(PROGRAMS
+  scripts/motion_planning.py
+  DESTINATION lib/${PROJECT_NAME}
+)
+
 # Install the plugin library to the standard lib directory
 install(TARGETS
   ${PROJECT_NAME}_plugins
@@ -120,8 +125,7 @@ install(TARGETS
   RUNTIME DESTINATION bin
 )
 
-
-install(DIRECTORY config launch
+install(DIRECTORY config launch scripts
   DESTINATION share/${PROJECT_NAME})
 
 if(BUILD_TESTING)

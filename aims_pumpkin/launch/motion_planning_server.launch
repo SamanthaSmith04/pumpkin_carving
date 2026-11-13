@@ -41,7 +41,7 @@
   <arg name="acceleration_scaling_factor" default="0.7" />
   
   <!-- CARTESIAN -->
-  <arg name="max_translational_vel" default="0.008" />
+  <arg name="max_translational_vel" default="0.01" />
   <arg name="max_rotational_vel" default="0.2" />
   <arg name="max_translational_acc" default="0.100" />
   <arg name="max_rotational_acc" default="3.14" />
@@ -65,6 +65,9 @@
     <arg name="root_frame" value="world"/>
     <arg name="preview_joint_states_topic" value="/trajectory/joint_states"/>
   </include>
+
+  <node pkg="aims_pumpkin" exec="motion_planning.py" name="c" output="screen">
+  </node>
 
   <node pkg="aims_pumpkin" exec="motion_planning_server" name="motion_planning_server" output="screen">
     <param name="robot_description" value="$(var robot_description)"/>

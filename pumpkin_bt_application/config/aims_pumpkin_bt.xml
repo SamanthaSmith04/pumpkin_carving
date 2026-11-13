@@ -90,8 +90,8 @@
                                   _description="Tesseract&#10;"/>
             </Sequence>
             <Sequence>
-              <GetTFPose target_frame="pumpkin_face"
-                         source_frame="world"
+              <GetTFPose target_frame="world"
+                         source_frame="pumpkin_face"
                          pose_output="{pumpkin_face_tf}"/>
               <GenerateRoboDKMotionPlan pose_list="{pose_list}"
                                         pumpkin_face_frame="{pumpkin_face_tf}"

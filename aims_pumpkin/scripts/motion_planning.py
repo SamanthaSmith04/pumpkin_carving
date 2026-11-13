@@ -8,11 +8,22 @@ from robodk.robomath import Mat
 
 from scipy.spatial.transform import Rotation as R
 from geometry_msgs.msg import PoseArray, Pose, Point, Quaternion
+from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
-class RoboDKPlanner():
+from rclpy.node import Node
+from rclpy.duration import Duration
+from rclpy.time import Time
+import rclpy
 
-    def __init__(self, pumpkin_face_frame=None):
-        super().__init__()
+import tf2_ros
+from geometry_msgs.msg import TransformStamped
+
+from pumpkin_msgs.srv import PlanMotion
+
+class RoboDKPlanner(Node):
+
+    def __init__(self, pumpkin_face_frame=None, joint_states=None):
+        super().__init__("RoboDKPlanner")
     
         RDK = robolink.Robolink()
         self.robot = RDK.Item('', robolink.ITEM_TYPE_ROBOT)
@@ -21,19 +32,53 @@ class RoboDKPlanner():
 
         self.pumpkin_face_frame = pumpkin_face_frame
 
-    def plan(self, pose_list):
-        test_poses_array = PoseArray()
-        test_poses_array.poses = pose_list
-        joint_plan = self.create_motion_plan(test_poses_array)
+        self.service = self.create_service(
+            srv_type=PlanMotion,
+            srv_name="/plan_motion_robodk",
+            callback=self.plan
+        )
+
+        self.joint_state_subscriber = self.create_subscription(
+            msg_type=JointTrajectory,
+            topic="/phantom/joint_states",
+            callback=self.joint_state_callback,
+            qos_profile=10
+        )
+        self.joint_states = []
+
+        self.tf_buffer = tf2_ros.Buffer()
+        self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
+
+        try:
+            # Wait up to 1 second for the transform
+            tf_stamped = self.tf_buffer.lookup_transform(
+                'world',         # target frame
+                'pumpkin_face',  # source frame
+                Time(),          # latest available (equivalent to tf2::TimePointZero)
+                timeout=Duration(seconds=1.0)
+            )
+        except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException) as e:
+            self.get_logger().error(f'Could not get transform: {e}')
+        
+
+    def joint_state_callback(self, msg):
+        self.get_logger().info(f"Received joint states with {len(msg.position)} positions")
+        self.joint_states = msg
+
+        
+
+    def plan(self, request, response):
+        pose_list = request.path
+        self.get_logger().info(f"Received request to plan motion for {len(pose_list)} poses.")
+        if not pose_list:
+            self.get_logger().warn("Received empty pose list. Returning empty trajectory.")
+            return response
+        joint_plan = self.create_motion_plan(pose_list)
         joint_trajectory_msg = self.convert_to_joint_trajectory_msg(joint_plan)
 
-        for idx, point in enumerate(joint_trajectory_msg.points):
-            print(f"Point {idx}:")
-            print("  Positions (rad):", point.positions)
-            print("  Velocities (rad/s):", point.velocities)
-            print("  Accelerations (rad/s^2):", point.accelerations)
-            print("  Time from start:", point.time_from_start.sec, "sec", point.time_from_start.nanosec, "nsec")
-
+        response.trajectory = joint_trajectory_msg
+        self.get_logger().info(f"Motion plan created with {len(joint_trajectory_msg.points)} trajectory points.")
+        return response
     def create_motion_plan(self, pose_list):
         """
         Create a motion plan for the robot to follow a list of poses.
@@ -42,61 +87,58 @@ class RoboDKPlanner():
         Outgoing: radians (flat joint list).
         """
         joint_plan = []
-
-        # Get current joints from RoboDK (RoboDK returns degrees)
-        current_joints_deg = self.robot.Joints().tolist()
+        
+        # Get current joints from RoboDK using .list() for RoboDK Mat objects
+        current_joints_mat = self.robot.Joints()
+        current_joints_deg = current_joints_mat.list() if hasattr(current_joints_mat, 'list') else list(current_joints_mat)
         print("Current robot position (deg):", current_joints_deg)
 
-        for pose in pose_list.poses:
-            # 1. Convert meters -> millimeters for RoboDK
-            robodk_position = [x * 1000 for x in [pose.position.x, pose.position.y, pose.position.z]]  
-
-            # 2. Convert ROS Quaternion -> Rotation Matrix
-            rot_matrix = R.from_quat([pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w]).as_matrix()
-
-            # 3. Apply pumpkin_face frame transformation if available (in millimeters)
-            if self.pumpkin_face_frame is not None:
-                pumpkin_face_position = [self.pumpkin_face_frame.position.x * 1000, 
-                                        self.pumpkin_face_frame.position.y * 1000, 
-                                        self.pumpkin_face_frame.position.z * 1000]  
-
-                pumpkin_face_rot_matrix = R.from_quat([self.pumpkin_face_frame.orientation.x, 
-                                                        self.pumpkin_face_frame.orientation.y, 
-                                                        self.pumpkin_face_frame.orientation.z, 
-                                                        self.pumpkin_face_frame.orientation.w]).as_matrix()
-
-                robodk_position = [
-                    pumpkin_face_rot_matrix[0][0] * robodk_position[0] + pumpkin_face_rot_matrix[0][1] * robodk_position[1] + pumpkin_face_rot_matrix[0][2] * robodk_position[2] + pumpkin_face_position[0],
-                    pumpkin_face_rot_matrix[1][0] * robodk_position[0] + pumpkin_face_rot_matrix[1][1] * robodk_position[1] + pumpkin_face_rot_matrix[1][2] * robodk_position[2] + pumpkin_face_position[1],
-                    pumpkin_face_rot_matrix[2][0] * robodk_position[0] + pumpkin_face_rot_matrix[2][1] * robodk_position[1] + pumpkin_face_rot_matrix[2][2] * robodk_position[2] + pumpkin_face_position[2]
-                ]
-
-            rdk_matrix = Mat([
-                [rot_matrix[0][0], rot_matrix[0][1], rot_matrix[0][2], robodk_position[0]],
-                [rot_matrix[1][0], rot_matrix[1][1], rot_matrix[1][2], robodk_position[1]],
-                [rot_matrix[2][0], rot_matrix[2][1], rot_matrix[2][2], robodk_position[2]],
-                [0, 0, 0, 1]
-            ]) 
-
-            # SolveIK returns joint angles in DEGREES
-            new_robot_joints_deg = self.robot.SolveIK(rdk_matrix)
-            
-            if hasattr(new_robot_joints_deg, 'tolist'):
-                joints_list = new_robot_joints_deg.tolist()
-            else:
-                joints_list = list(new_robot_joints_deg)
+        for pose_array in pose_list:
+            for pose in pose_array.poses:
                 
-            # Flatten and convert RoboDK DEGREES -> ROS RADIANS
-            flat_joints_rad = []
-            for item in joints_list:
-                if isinstance(item, (list, tuple, np.ndarray)):
-                    flat_joints_rad.extend([math.radians(float(x)) for x in np.atleast_1d(item).flatten()])
-                else:
-                    flat_joints_rad.append(math.radians(float(item)))
+                # 1. Convert meters -> millimeters for RoboDK
+                robodk_position = [x * 1000.0 for x in [pose.position.x, pose.position.y, pose.position.z]]  
 
-            print("Moving to pose:", pose)
-            print("Calculated joint configuration (rad):", flat_joints_rad)
-            joint_plan.append(flat_joints_rad)
+                # 2. Convert ROS Quaternion -> Rotation Matrix
+                rot_matrix = R.from_quat([pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w]).as_matrix()
+
+                # 3. Apply pumpkin_face frame transformation if available (in millimeters)
+                if self.pumpkin_face_frame is not None:
+                    pumpkin_face_position = [self.pumpkin_face_frame.position.x * 1000, 
+                                            self.pumpkin_face_frame.position.y * 1000, 
+                                            self.pumpkin_face_frame.position.z * 1000]  
+
+                    pumpkin_face_rot_matrix = R.from_quat([self.pumpkin_face_frame.orientation.x, 
+                                                            self.pumpkin_face_frame.orientation.y, 
+                                                            self.pumpkin_face_frame.orientation.z, 
+                                                            self.pumpkin_face_frame.orientation.w]).as_matrix()
+
+                    robodk_position = [
+                        pumpkin_face_rot_matrix[0][0] * robodk_position[0] + pumpkin_face_rot_matrix[0][1] * robodk_position[1] + pumpkin_face_rot_matrix[0][2] * robodk_position[2] + pumpkin_face_position[0],
+                        pumpkin_face_rot_matrix[1][0] * robodk_position[0] + pumpkin_face_rot_matrix[1][1] * robodk_position[1] + pumpkin_face_rot_matrix[1][2] * robodk_position[2] + pumpkin_face_position[1],
+                        pumpkin_face_rot_matrix[2][0] * robodk_position[0] + pumpkin_face_rot_matrix[2][1] * robodk_position[1] + pumpkin_face_rot_matrix[2][2] * robodk_position[2] + pumpkin_face_position[2]
+                    ]
+
+                rdk_matrix = Mat([
+                    [rot_matrix[0][0], rot_matrix[0][1], rot_matrix[0][2], robodk_position[0]],
+                    [rot_matrix[1][0], rot_matrix[1][1], rot_matrix[1][2], robodk_position[1]],
+                    [rot_matrix[2][0], rot_matrix[2][1], rot_matrix[2][2], robodk_position[2]],
+                    [0, 0, 0, 1]
+                ]) 
+
+                # SolveIK returns joint angles in DEGREES as a RoboDK Mat object
+                new_robot_joints_deg = self.robot.SolveIK(rdk_matrix)
+                
+                # Robustly extract all joint values into a flat list using .list() or numpy
+                if hasattr(new_robot_joints_deg, 'list'):
+                    joints_list = new_robot_joints_deg.list()
+                else:
+                    joints_list = np.array(new_robot_joints_deg).flatten().tolist()
+                    
+                # Flatten and convert RoboDK DEGREES -> ROS RADIANS
+                flat_joints_rad = [math.radians(float(x)) for x in np.atleast_1d(joints_list).flatten()]
+                
+                joint_plan.append(flat_joints_rad)
             
         return joint_plan
         
@@ -169,6 +211,7 @@ class ConstantTCPSpeedTimeParameterization:
 
     def compute(self, trajectory_positions, max_velocity_scaling_factor = 1.0, 
                 max_acceleration_scaling_factor = 1.0):
+        print("Computing time parameterization for trajectory with", len(trajectory_positions), "points.")
         n_points = len(trajectory_positions)
         if n_points == 0:
             return None
@@ -181,10 +224,8 @@ class ConstantTCPSpeedTimeParameterization:
         total_path_length = 0.0
 
         for joints in trajectory_positions:
-            # Time parameterization expects input joint positions in radians, 
-            # but RoboDK's SolveFK expects degrees! We must convert radians back to degrees for RoboDK FK.
+            # Convert radians back to degrees for RoboDK FK
             joints_deg_list = [math.degrees(float(j)) for j in np.atleast_1d(joints).flatten()]
-            
             fk_mat = np.array(self.robot.SolveFK(joints_deg_list))
             cartesian_poses.append(fk_mat)
 
@@ -261,26 +302,20 @@ class ConstantTCPSpeedTimeParameterization:
             "accelerations": joint_accelerations
         }
 
-def _plan_motion(pose_list, pumpkin_face_frame=None):
-    motion_planner_node = RoboDKPlanner(pumpkin_face_frame=pumpkin_face_frame)
+def _plan_motion(pose_list, joint_states=None, pumpkin_face_frame=None):
+    motion_planner_node = RoboDKPlanner(pumpkin_face_frame=pumpkin_face_frame, joint_states=joint_states)
     joint_plan = motion_planner_node.create_motion_plan(pose_list)
     joint_trajectory_msg = motion_planner_node.convert_to_joint_trajectory_msg(joint_plan)
+
     return joint_trajectory_msg
 
 
 def main():
-    test_poses = [
-            Pose(position=Point(x=0.0, y=0.0, z=0.5), orientation=Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)),
-            Pose(position=Point(x=0.6, y=0.1, z=0.3), orientation=Quaternion(x=1.0, y=0.0, z=0.0, w=0.0)),
-            Pose(position=Point(x=0.7, y=0.2, z=0.4), orientation=Quaternion(x=0.0, y=0.0, z=1.0, w=0.0)),
-        ]
-
-    pumpkin_face_frame = Pose(
-        position=Point(x=1.7, y=0.0, z=1.0),
-        orientation=Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)
-    )
-    motion_planner_node = RoboDKPlanner(pumpkin_face_frame=pumpkin_face_frame)
-    motion_planner_node.plan(test_poses)
+    rclpy.init()
+    motion_planner_node = RoboDKPlanner()
+    rclpy.spin(motion_planner_node)
+    motion_planner_node.destroy_node()
+    rclpy.shutdown()
 
 if __name__ == "__main__":
     main()

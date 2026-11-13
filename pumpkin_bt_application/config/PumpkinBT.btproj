@@ -45,12 +45,27 @@
             <output_port name="joint_trajectory"/>
             <output_port name="num_points"/>
         </Action>
+        <Action ID="GenerateRoboDKMotionPlan" editable="true">
+            <input_port name="pose_list"/>
+            <input_port name="pumpkin_face_frame"/>
+            <output_port name="joint_trajectory"/>
+            <output_port name="num_points"/>
+        </Action>
         <Action ID="GetComboBoxIndex" editable="true">
             <input_port name="combo_box"/>
             <output_port name="combo_box_index"/>
         </Action>
+        <Action ID="GetComboBoxValue" editable="true">
+            <input_port name="combo_box"/>
+            <output_port name="combo_box_value"/>
+        </Action>
         <Action ID="GetCurrentJointState" editable="true">
             <output_port name="joint_state"/>
+        </Action>
+        <Action ID="GetTFPose" editable="true">
+            <input_port name="target_frame"/>
+            <input_port name="source_frame"/>
+            <output_port name="pose_output"/>
         </Action>
         <Action ID="GetTrajectoryAtIndex" editable="true">
             <input_port name="trajectory_list"/>

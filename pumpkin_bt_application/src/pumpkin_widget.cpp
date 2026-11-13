@@ -19,6 +19,9 @@ PumpkinGUI::PumpkinGUI(rclcpp::Node::SharedPtr ros_node, QWidget *parent)
   std::string package_path = ament_index_cpp::get_package_share_directory("pumpkin_bt_application");
   std::string gui_bt_file = package_path + "/config/aims_pumpkin_bt.xml";  
 
+  auto tf_buffer = std::make_shared<tf2_ros::Buffer>(ros_node_->get_clock());
+  auto tf_listener = std::make_shared<tf2_ros::TransformListener>(*tf_buffer);
+
   // initialize the UI for the GUI
   ui_->setupUi(this);
 
@@ -46,9 +49,9 @@ PumpkinGUI::PumpkinGUI(rclcpp::Node::SharedPtr ros_node, QWidget *parent)
   factory.registerNodeType<bt_common_nodes::ProcessTraj>("ProcessTraj");
   factory.registerNodeType<bt_common_nodes::CheckIntValueEquality>("CheckIntValueEquality");
   factory.registerNodeType<bt_pumkin_nodes::LoadPosesListFromYAML>("LoadPosesListFromYAML");
-  factory.registerNodeType<bt_pumkin_nodes::GetTFPose>("GetTFPose");
+  factory.registerNodeType<bt_pumkin_nodes::GetTFPose>("GetTFPose", tf_buffer);
   factory.registerNodeType<bt_pumkin_nodes::GetComboBoxValue>("GetComboBoxValue");
-  factory.registerNodeType<bt_pumkin_nodes::GenerateRoboDKMotionPlan>("GenerateRoboDKMotionPlan");
+//   factory.registerNodeType<bt_pumkin_nodes::GenerateRoboDKMotionPlan>("GenerateRoboDKMotionPlan");
 
   // link ros topics, services, and actions
   auto pub_traj_params = BT::RosNodeParams(ros_node_, "trajectory");
@@ -66,6 +69,8 @@ PumpkinGUI::PumpkinGUI(rclcpp::Node::SharedPtr ros_node, QWidget *parent)
   auto publish_pose_array_params = BT::RosNodeParams(ros_node_, "loaded_pose_array");
   factory.registerNodeType<bt_pumkin_nodes::PubPoseArrayPreview>("PubPoseArrayPreview", publish_pose_array_params);
 
+  auto generate_motion_dk_params = BT::RosNodeParams(ros_node_, "plan_motion_robodk");
+  factory.registerNodeType<bt_pumkin_nodes::GenerateRoboDKMotionPlan>("GenerateRoboDKMotionPlan", generate_motion_dk_params);
   tree = factory.createTreeFromFile(gui_bt_file, blackboard);
 
   // Start ticking BehaviorTree
